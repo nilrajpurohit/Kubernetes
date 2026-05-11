@@ -22,44 +22,30 @@
 ## 🔵 Intermediate Level — Application Operations
 
 10. [Advanced Workload Controllers](#1-advanced-workload-controllers)
-
     * ReplicaSet
     * StatefulSet
     * DaemonSet
     * Job & CronJob
-
 11. [Storage & Persistent Data](#2-storage)
-
     * PersistentVolumes
     * PersistentVolumeClaims
     * StorageClasses
-
 12. [Networking Deep Dive](#3-networking-deep-dive)
-
     * Ingress
     * Gateway API
     * NetworkPolicy
-
 13. [Resource Management](#4-resource-management)
-
     * Requests & Limits
     * LimitRange
     * ResourceQuota
-
 14. [Health Checks & Probes](#5-health-probes)
-
 15. [Scheduling & Placement](#6-scheduling--affinity)
-
     * Node Affinity
     * Pod Affinity
     * Taints & Tolerations
-
 16. [RBAC & Security Basics](#7-rbac-role-based-access-control)
-
 17. [Kustomize & Helm](#8-helm--kubernetes-package-manager)
-
 18. [Kubernetes Troubleshooting](#9-kubernetes-troubleshooting)
-
 19. [Intermediate Hands-On Checklist](#9-intermediate-checklist)
 
 ---
@@ -67,51 +53,36 @@
 ## 🟠 Advanced Level — Production Kubernetes
 
 20. [Cluster Administration](#1-cluster-administration)
-
     * kubeadm
     * etcd Operations
     * Certificate Management
-
 21. [Autoscaling](#2-autoscaling)
-
     * HPA
     * VPA
     * Cluster Autoscaler
     * KEDA
-
 22. [Observability Stack](#3-observability-stack)
-
     * Prometheus
     * Grafana
     * Logging
     * Tracing
     * Alerting
-
 23. [GitOps & CI/CD](#4-gitops--cicd)
-
     * ArgoCD
     * Flux CD
     * GitHub Actions / GitLab CI
-
 24. [Service Mesh](#5-service-mesh--istio--linkerd)
-
 25. [Security Hardening](#6-security-hardening)
-
     * Pod Security Standards
     * Security Contexts
     * Image Security
     * Supply Chain Security
-
 26. [Custom Resources & Operators](#7-custom-resources--operators)
-
 27. [Managed Kubernetes Platforms](#8-managed-kubernetes-platforms)
-
     * EKS
     * GKE
     * AKS
-
 28. [Multi-Tenancy Patterns](#9-multi-tenancy-patterns)
-
 29. [Advanced Hands-On Checklist](#9-advanced-checklist)
 
 ---
@@ -119,31 +90,20 @@
 ## 🔴 Expert Level — Platform Engineering & Scale
 
 30. [Cluster API (CAPI)](#1-cluster-api-capi)
-
 31. [Multi-Cluster Management](#2-multi-cluster-management)
-
 32. [CNI & eBPF Deep Dive](#3-cni-deep-dive)
-
 33. [Kubernetes API Internals](#4-kubernetes-api-internals)
-
     * Admission Controllers
     * API Aggregation
     * Policy Engines
-
 34. [Performance Engineering](#5-performance-engineering)
-
 35. [Disaster Recovery & Backup Strategies](#6-disaster-recovery--business-continuity)
-
 36. [Cost Optimization at Scale](#7-cost-optimization-at-scale)
-
 37. [Platform Engineering](#8-platform-engineering)
-
     * Backstage
     * Crossplane
     * Internal Developer Platforms
-
 38. [Contributing to the Kubernetes Ecosystem](#9-contributing-to-the-ecosystem)
-
 39. [Expert Hands-On Checklist](#10-expert-checklist)
 
 ---
