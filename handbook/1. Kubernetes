@@ -1,0 +1,174 @@
+1. What is Kubernetes:
+    - Kubernetes (often abbreviated as K8s) is an open-source container orchestration platform used to automate:
+        - Deployment of applications
+        - Scaling applications
+        - Load balancing
+        - Service discovery
+        - Self-healing
+        - Rolling updates and rollbacks
+    - It was originally developed by Google and is now maintained by the Cloud Native Computing Foundation.
+
+2. Why Kubernetes Exists:
+    - Before Kubernetes, managing containers manually was difficult because:
+        - Containers could crash unexpectedly
+        - Scaling required manual intervention
+        - Networking between containers was complex
+        - Updates caused downtime
+        - Infrastructure management became messy at scale
+    - Kubernetes solves these problems by providing a centralized system to manage containerized applications.
+
+3. Core Kubernetes Concepts
+    - Cluster: A cluster is a group of machines working together.
+        It contains:
+            - Control Plane (Master Node) → manages the cluster
+            - Worker Nodes → run applications
+    - Node: A node is a machine (VM or physical server) inside the cluster.
+        Two types:
+            - Control Plane Node
+            - Worker Node
+    - Pod: A Pod is the smallest deployable unit in Kubernetes.
+        - A pod usually contains:
+            One container
+            Shared networking
+            Shared storage
+        - Example:
+            kubectl run nginx --image=nginx
+        - This creates a pod running the NGINX container.
+    - Deployment: A Deployment manages pods and ensures:
+        - Desired number of replicas
+        - Auto-recovery
+        - Rolling updates
+        - Example:
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+                name: nginx-deployment
+            spec:
+                replicas: 3
+                selector:
+                    matchLabels:
+                        app: nginx
+                template:
+                    metadata:
+                        labels:
+                            app: nginx
+                    spec:
+                        containers:
+                        - name: nginx
+                            image: nginx
+    - Service: A Service exposes pods to:
+        - Internal cluster traffic
+        - External users
+        - Types:
+            ClusterIP
+            NodePort
+            LoadBalancer
+
+4. Kubernetes Architecture: High-Level Architecture
+                        +-------------------+
+                        |   Control Plane   |
+                        |-------------------|
+                        | API Server        |
+                        | Scheduler         |
+                        | Controller Manager|
+                        | etcd              |
+                        +---------+---------+
+                                |
+            -----------------------------------------
+            |                                       |
+    +--------+--------+                    +---------+--------+
+    |   Worker Node   |                    |   Worker Node    |
+    |-----------------|                    |------------------|
+    | kubelet         |                    | kubelet          |
+    | kube-proxy      |                    | kube-proxy       |
+    | Container Runtime|                   | Container Runtime|
+    | Pods            |                    | Pods             |
+    +-----------------+                    +------------------+
+
+    - Control Plane Components:
+        - API Server: The API Server is the brain of Kubernetes.
+            - Receives kubectl commands
+            - Validates requests
+            - Communicates with cluster components
+            - Example: kubectl get pods
+        - etcd: etcd is a distributed key-value database.
+            - It stores:
+                Cluster state
+                Configuration
+                Secrets
+                Metadata
+            - If etcd is lost, cluster state is lost.
+        - Scheduler: The Scheduler decides:
+            - “Which node should run this pod?”
+            - It checks:
+                CPU
+                Memory
+                Constraints
+                Taints/tolerations
+        - Controller Manager: Controllers continuously monitor cluster state.
+            - Examples:
+                Node Controller
+                Deployment Controller
+                ReplicaSet Controller
+            - They ensure:
+                Actual state = Desired state
+    - Worker Node Components:
+        - kubelet: The kubelet:
+            Runs on every node
+            Communicates with API server
+            Ensures containers are running
+        - kube-proxy
+            Handles:
+                Networking
+                Service routing
+                Load balancing
+        - Container Runtime: Software that runs containers.
+            Examples:
+                containerd
+                CRI-O
+                (Docker support now works through CRI compatibility.)
+
+5. Kubernetes Workflow Example:
+    - Suppose you deploy an app with 3 replicas.
+    - Step-by-step
+        - User runs: kubectl apply -f app.yaml
+        - API Server receives request
+        - Deployment object stored in etcd
+        - Scheduler selects worker nodes
+        - kubelet starts containers
+        - Pods become available
+        - Service exposes application
+        - If a pod crashes: Controller recreates it automatically
+    - This is called self-healing.
+
+6. Setting Up a Local Kubernetes Cluster
+    - Install Requirements
+        Linux Install:
+            Docker
+            kubectl
+            Minikube
+    - Install kubectl
+        Linux example:
+            curl -LO "https://dl.k8s.io/release/$(curl -L -s \
+            https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+            chmod +x kubectl
+            sudo mv kubectl /usr/local/bin/
+        Verify:
+            kubectl version --client
+    - Install Minikube
+        Linux example:
+            curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+            sudo install minikube-linux-amd64 /usr/local/bin/minikube
+        Verify:
+            minikube version
+    - Start Cluster
+        minikube start
+        - This:
+            Creates VM/container
+            Starts Kubernetes components
+            Configures kubectl automatically
+        - Check nodes:
+            kubectl get nodes
+            - Expected:
+                NAME       STATUS   ROLES           AGE   VERSION
+                minikube   Ready    control-plane   2m    v1.xx.x

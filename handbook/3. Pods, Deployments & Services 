@@ -1,0 +1,129 @@
+1. What is Pods:
+    - A Pod is the smallest deployable unit in Kubernetes.
+    - A pod usually contains:
+        One container
+        Shared network
+        Shared storage
+        Shared lifecycle
+    - Pod Characteristics
+        Each pod gets its own IP address
+        Containers inside a pod communicate using localhost
+        Pods are temporary (ephemeral)
+        If a pod crashes, Kubernetes can recreate it
+    - Why Pods Alone Are Not Enough
+        - Pods are fragile because:
+            They can die
+            IP addresses change
+            Scaling manually is difficult
+        - This is why Deployments exist.
+    - Example:
+        apiVersion: v1
+        kind: Pod
+        metadata:
+            name: nginx-pod
+        spec:
+            containers:
+            - name: nginx
+                image: nginx
+                ports:
+                - containerPort: 80
+
+2. What is Deployments:
+    - A Deployment manages pods automatically.
+    - It provides:
+        Scaling
+        Self-healing
+        Rolling updates
+        Rollbacks
+    - Instead of creating pods directly in production, you usually create Deployments.
+    - Deployment Architecture
+        Deployment
+            ↓
+        ReplicaSet
+            ↓
+        Pods
+    - Example:
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+        name: nginx-deployment
+    spec:
+        replicas: 3
+        selector:
+            matchLabels:
+            app: nginx
+        template:
+            metadata:
+            labels:
+                app: nginx
+        spec:
+            containers:
+            - name: nginx
+                image: nginx:latest
+                ports:
+                - containerPort: 80
+
+3. What is Services:
+    - Pods are dynamic:
+        Pod IPs change
+        Pods restart
+        Pods scale up/down
+    - A Service provides a stable network endpoint.
+    - It acts like:
+        A load balancer
+        A stable DNS name
+        A traffic router
+    - Example:
+        apiVersion: v1
+        kind: Service
+        metadata:
+            name: nginx-service
+        spec:
+            selector:
+                app: nginx
+            ports:
+            - protocol: TCP
+                port: 80
+                targetPort: 80
+            type: ClusterIP
+
+4. How Service Works:
+    Users
+        ↓
+    Service
+        ↓
+    Pods
+    - The service:
+        Finds matching pods using labels
+        Routes traffic automatically
+        Load balances traffic
+
+5. Service Types:
+    - Kubernetes supports multiple service types.
+    - ClusterIP (Default): Internal-only access.
+        - Accessible:
+            Only inside cluster
+        - Use cases:
+            Backend APIs
+            Databases
+            Internal microservices
+    - NodePort: Exposes application on node IP + port.
+        - Accessible externally: <NodeIP>:30000-32767
+        - 192.168.1.10:30080
+    - LoadBalancer: Creates cloud load balancer automatically.
+        - Supported on:
+            AWS
+            Azure
+            GCP
+        - Best for production external apps.
+    - ExternalName: Maps service to external DNS name.
+        - Useful for:
+            External databases
+            Third-party APIs
+
+6. Comparing Service Types
+    Type	        Internal	    External	Use Case
+    ClusterIP	    Yes	            No	        Internal communication
+    NodePort	    Yes	            Yes	        Testing/dev
+    LoadBalancer	Yes	            Yes	        Production
+    ExternalName	External only	External	DNS mapping

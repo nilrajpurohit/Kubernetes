@@ -1,0 +1,31 @@
+1. What is kubectl?
+    - kubectl is the command-line tool used to interact with Kubernetes clusters.
+    - Syntax:
+        kubectl [command] [TYPE] [NAME] [flags]
+
+2. Essential kubectl Commands:
+    - Check cluster status: kubectl cluster-info
+    - View nodes: kubectl get nodes
+    - Create Pod: kubectl run nginx --image=nginx
+    - List Pods: kubectl get pods -o wide
+    - Watch live: kubectl get pods -w
+    - Describe Pod: kubectl describe pod nginx
+    - Delete Pod: kubectl delete pod nginx
+    - Create Deployment: kubectl create deployment nginx --image=nginx
+    - Scale Deployment: kubectl scale deployment nginx --replicas=3
+    - Check Deployments: kubectl get deployments
+    - Delete Deployment: kubectl delete deployment nginx
+    - Apply YAML File: kubectl apply -f app.yaml
+    - Delete Using YAML: kubectl delete -f app.yaml
+    - View Logs: kubectl logs <pod-name>
+    - Execute Inside Pod: kubectl exec -it <pod-name> -- /bin/bash
+    - List Namespaces: kubectl get namespaces
+    - Create Namespace: kubectl create namespace dev
+    - Use Namespace: kubectl get pods -n dev
+    - View Current Context: kubectl config current-context
+    - List Contexts: kubectl config get-contexts
+    - Start cluster: minikube start
+    - Deploy app: kubectl create deployment demo --image=nginx
+    - Expose app: kubectl expose deployment demo --type=NodePort --port=80
+    - View resources: kubectl get all
+    - Open app: minikube service demo
