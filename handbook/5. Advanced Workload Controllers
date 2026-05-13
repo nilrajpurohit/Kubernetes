@@ -1,0 +1,233 @@
+1. Advanced Kubernetes Workload Controllers:
+    - In Kubernetes, workload controllers manage Pods automatically. They ensure the desired number of Pods are running, handle failures, and support different deployment patterns.
+    - The main advanced workload controllers are:
+        - ReplicaSet
+        - StatefulSet
+        - DaemonSet
+        - Job
+        - CronJob
+
+2. ReplicaSet:
+    - A ReplicaSet ensures that a specified number of identical Pod replicas are always running.
+    - If a Pod crashes or is deleted, the ReplicaSet creates a new one automatically.
+    - Purpose
+        Maintain high availability
+        Ensure scaling
+        Self-healing for Pods
+    - How It Works, You define:
+        Desired number of replicas
+        Pod template
+        Label selector
+    - The controller continuously compares:
+        Desired replicas vs Actual replicas
+    - and fixes differences automatically.
+    - Example:
+        apiVersion: apps/v1
+        kind: ReplicaSet
+        metadata:
+            name: nginx-rs
+        spec:
+            replicas: 3
+            selector:
+                matchLabels:
+                    app: nginx
+            template:
+                metadata:
+                    labels:
+                        app: nginx
+                spec:
+                    containers:
+                    - name: nginx
+                        image: nginx
+    - Key Characteristics
+        Feature	                    ReplicaSet
+        Maintains Pod count	            Yes
+        Stateful identity	            No
+        Persistent storage	            No
+        Ordered deployment	            No
+        Mostly managed by Deployment	Yes
+
+3. Deployment:
+    - A Deployment is a higher-level controller that manages ReplicaSets automatically.
+    - It adds advanced features like:
+        Rolling updates
+        Rollbacks
+        Version history
+        Zero-downtime deployments
+    - Deployment Architecture:
+        Deployment
+            ↓
+        ReplicaSet
+            ↓
+        Pods
+    - Deployment does not directly manage Pods.
+        - Instead:
+            Deployment creates ReplicaSet
+            ReplicaSet creates Pods
+    - Example:
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+            name: nginx-deployment
+        spec:
+            replicas: 3
+        selector:
+            matchLabels:
+                app: nginx
+        template:
+            metadata:
+                labels:
+                    app: nginx
+            spec:
+                containers:
+                - name: nginx
+                    image: nginx:1.25
+
+4. StatefulSet:
+    - A StatefulSet manages stateful applications where each Pod needs:
+        Stable identity
+        Stable hostname
+        Persistent storage
+        Ordered startup/shutdown
+    - Used for databases and clustered systems.
+    - Normal Pods are interchangeable.
+    - But databases are different.
+    - Example:
+        MySQL primary node
+        MongoDB replica members
+        Kafka brokers
+    - Each instance must keep:
+        Its own data
+        Network identity
+        Order
+    - Example:
+        apiVersion: apps/v1
+        kind: StatefulSet
+        metadata:
+            name: mysql
+        spec:
+            serviceName: mysql
+            replicas: 3
+        selector:
+            matchLabels:
+                app: mysql
+        template:
+            metadata:
+                labels:
+                    app: mysql
+            spec:
+                containers:
+                - name: mysql
+                    image: mysql:8
+    - Key Characteristics:
+        Feature	            StatefulSet
+        Stable Pod identity	Yes
+        Ordered startup	    Yes
+        Persistent storage	Yes
+        Scaling	            Yes
+        Stateless apps	    Not ideal
+
+5. DaemonSet:
+    - A DaemonSet ensures that a copy of a Pod runs on every node (or selected nodes).
+    - Whenever a new node joins the cluster, the Pod is automatically added.
+    - Purpose
+        - Used for node-level services such as:
+            Logging agents
+            Monitoring agents
+            Security agents
+            Storage daemons
+    - Example:
+        apiVersion: apps/v1
+        kind: DaemonSet
+        metadata:
+            name: fluentd
+        spec:
+            selector:
+                matchLabels:
+                    app: fluentd
+        template:
+            metadata:
+                labels:
+                    app: fluentd
+            spec:
+                containers:
+                - name: fluentd
+                    image: fluent/fluentd
+    - Key Characteristics
+        Feature	                DaemonSet
+        One Pod per node	    Yes
+        Auto-runs on new nodes	Yes
+        Scaling by replicas	    No
+        Good for node agents	Yes
+    
+6. Job
+    - A Job runs Pods until a task completes successfully.
+    - Purpose
+        Used for:
+            Batch processing
+            Data migration
+            Backup tasks
+            One-time scripts
+            ETL pipelines
+    - Example:
+        apiVersion: batch/v1
+        kind: Job
+        metadata:
+            name: pi-job
+        spec:
+        template:
+            spec:
+                containers:
+                - name: pi
+                    image: perl
+                    command: ["perl", "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+                restartPolicy: Never
+    - Key Characteristics
+        Feature	                Job
+        Finite task	            Yes
+        Runs until completion	Yes
+        Restarts on failure	    Yes
+        Long-running service	No
+    
+7. CronJob
+    - A CronJob runs Jobs on a schedule.
+    - Equivalent to Linux cron scheduler.
+    - Purpose:
+        Used for recurring tasks:
+            Daily backups
+            Cleanup scripts
+            Scheduled reports
+            Periodic sync tasks
+    - Example:
+        apiVersion: batch/v1
+        kind: CronJob
+        metadata:
+            name: backup-job
+        spec:
+            schedule: "0 2 * * *"
+        jobTemplate:
+            spec:
+                template:
+                    spec:
+                        containers:
+                        - name: backup
+                            image: busybox
+                            command:
+                            - /bin/sh
+                            - -c
+                            - echo "Running backup"
+                        restartPolicy: OnFailure
+
+8. Deployment VS ReplicaSet:
+    Core Difference
+    Feature	                        Deployment	                    ReplicaSet
+    Purpose	                        Manage application lifecycle	Maintain Pod count
+    Creates Pods directly	        Indirectly	                    Yes
+    Manages ReplicaSets	            Yes	                            No
+    Rolling updates	                Yes	                            No
+    Rollbacks	                    Yes	                            No
+    Version history	                Yes	                            No
+    Self-healing Pods	            Yes	                            Yes
+    Scaling	                        Yes	                            Yes
+    Used directly in production	    Yes	                            Rarely
+

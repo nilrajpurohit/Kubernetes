@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deploy
+  labels:
+    layer: backend
+    version: alpine
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      layer: backend
+    matchExpressions:
+    - {key: version, operator: In, values: [alpine]}
+  template:
+    metadata:
+      labels:
+        layer: backend
+        version: alpine
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
