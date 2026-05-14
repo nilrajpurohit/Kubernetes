@@ -1,0 +1,149 @@
+1. Kubernetes Storage:
+    - In Kubernetes, containers are ephemeral — if a Pod dies, its local filesystem is usually lost.
+    - To store data permanently (databases, uploads, logs, etc.), Kubernetes provides a storage system built around:
+        PersistentVolume (PV)
+        PersistentVolumeClaim (PVC)
+        StorageClass
+    - Think of them like this:
+        Concept	        Real-world analogy
+        PV	            Actual hard disk/storage
+        PVC	            Request form for storage
+        StorageClass	Storage type/provider template
+
+2. PersistentVolume (PV)
+    - A PersistentVolume is a piece of storage available in the Kubernetes cluster.
+    - It can come from:
+        AWS EBS
+        Azure Disk
+        GCP Persistent Disk
+        NFS
+        Ceph
+        Local disk
+        etc.
+    - A PV exists independently of Pods.
+    - Example:
+        apiVersion: v1
+        kind: PersistentVolume
+        metadata:
+            name: my-pv
+        spec:
+            capacity:
+                storage: 5Gi
+        accessModes:
+            - ReadWriteOnce
+        persistentVolumeReclaimPolicy: Retain
+        hostPath:
+            path: /data/my-storage
+    - Important Fields:
+        - capacity: 
+            How much storage is available.
+            storage: 5Gi
+        - accessModes:
+            Defines how Pods can use the volume.
+            Mode	            Meaning
+            ReadWriteOnce (RWO)	Mounted by one node
+            ReadOnlyMany (ROX)	Multiple nodes read-only
+            ReadWriteMany (RWX)	Multiple nodes read/write
+        - reclaimPolicy:
+            What happens after PVC is deleted.
+            Policy	Meaning
+            Retain	Keep data
+            Delete	Delete storage automatically
+            Recycle	Old/rarely used
+
+3. PersistentVolumeClaim (PVC)
+    - A PVC is a request for storage by a user/application.
+    - Instead of Pods directly using a PV, they request storage through PVC.
+    - Kubernetes then:
+        Finds matching PV
+        Binds PVC to PV
+    - Example:
+        apiVersion: v1
+        kind: PersistentVolumeClaim
+        metadata:
+            name: my-pvc
+        spec:
+            accessModes:
+                - ReadWriteOnce
+        resources:
+            requests:
+                storage: 2Gi
+    - How PV and PVC Work Together: Pod ---> PVC ---> PV ---> Actual Storage
+    - Pod Using PVC:
+        apiVersion: v1
+        kind: Pod
+        metadata:
+            name: app-pod
+        spec:
+            containers:
+            - name: app
+                image: nginx
+            volumeMounts:
+            - mountPath: "/usr/share/nginx/html"
+                name: my-volume
+        volumes:
+        - name: my-volume
+            persistentVolumeClaim:
+                claimName: my-pvc
+    - Now data written inside: /usr/share/nginx/html remains even if Pod restarts.
+    - Static Provisioning
+        When admin manually creates PVs beforehand:
+            Admin creates PV
+                    ↓
+            User creates PVC
+                    ↓
+            PVC binds to matching PV
+    - This is called:
+    - Static Provisioning
+
+4. StorageClass:
+    - Managing PVs manually becomes painful at scale.
+    - StorageClass enables:
+    - Dynamic Provisioning
+    - Meaning:
+        PVC automatically creates storage
+        No need to manually create PV
+    - Example StorageClass
+        apiVersion: storage.k8s.io/v1
+        kind: StorageClass
+        metadata:
+            name: fast-storage
+        provisioner: kubernetes.io/aws-ebs
+        parameters:
+            type: gp3
+    - This tells Kubernetes: “When storage is requested, create AWS EBS gp3 disk.”
+    - PVC Using StorageClass
+        apiVersion: v1
+        kind: PersistentVolumeClaim
+        metadata:
+            name: dynamic-pvc
+        spec:
+            accessModes:
+                - ReadWriteOnce
+        storageClassName: fast-storage
+        resources:
+            requests:
+                storage: 10Gi
+    - Now Kubernetes:
+        Reads StorageClass
+        Creates real storage automatically
+        Creates PV automatically
+        Binds PVC to it
+    - Dynamic Provisioning Flow
+        Pod
+        ↓
+        PVC
+        ↓
+        StorageClass
+        ↓
+        Dynamic PV Creation
+        ↓
+        Cloud Storage Created
+    - Full Relationship
+        StorageClass
+            ↓
+        Creates PV dynamically
+            ↓
+        PVC claims storage
+            ↓
+        Pod mounts PVC
