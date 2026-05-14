@@ -1,0 +1,318 @@
+1. Kubernetes Networking:
+    - Kubernetes networking is about how traffic flows:
+        Into the cluster → external users accessing apps
+        Inside the cluster → Pods talking to each other
+        Out of the cluster → apps reaching databases/APIs
+    - The three concepts you asked about solve different layers of networking:
+        Concept	        Main Purpose	                            Scope
+        Ingress	        HTTP/HTTPS traffic routing into cluster	    North-South traffic
+        Gateway API	    Modern replacement/evolution of Ingress	    Advanced traffic management
+        NetworkPolicy	Control Pod-to-Pod communication	        East-West security
+
+2. What is Ingress:
+    - An Ingress is a Kubernetes API object that manages external HTTP/HTTPS access to services inside the cluster.
+    - It acts like a smart reverse proxy/router.
+    - Instead of exposing every service with a LoadBalancer, you expose one entry point and route traffic internally.
+    - Basic Flow
+        Internet User
+            |
+            v
+        Ingress Controller
+            |
+            +----> Service A ---> Pods
+            |
+            +----> Service B ---> Pods
+    - Important distinction:
+        Ingress resource = configuration
+        Ingress Controller = actual software implementing it
+    - Common controllers:
+        NGINX Ingress Controller
+        Traefik
+        HAProxy Ingress
+        Istio
+    - Example Use Case:
+        Domain          Service
+        app.example.com	frontend
+        api.example.com	backend API
+        - Ingress routes requests based on hostname/path.
+
+3. What Ingress Can Do:
+    - Host-based routing
+        app.example.com -> frontend
+        api.example.com -> backend
+    - Path-based routing
+        /example.com/api -> api-service
+        /example.com/web -> web-service
+    - TLS termination
+    - Handles HTTPS certificates.
+        tls:
+        - hosts:
+            - app.example.com
+            secretName: tls-secret
+    - Load balancing
+        Distributes traffic across Pods.
+    - Ingress Architecture
+        Client
+            |
+            v
+        Cloud Load Balancer
+            |
+            v
+        Ingress Controller Pod
+            |
+            v
+        Kubernetes Service
+            |
+            v
+        Pods
+    - Limitations of Ingress
+    - Ingress became too limited for modern needs:
+        Mostly HTTP/HTTPS only
+        Different controllers support different annotations
+        No standard advanced traffic policies
+        Hard to extend
+        Vendor-specific features everywhere
+    - This led to the creation of Gateway API.
+
+4. What is Gateway API:
+    - Gateway API is the next-generation Kubernetes traffic management API.
+    - It is designed to replace many limitations of Ingress.
+    - Think of it as:
+        Ingress 2.0
+    - It is:
+        More expressive
+        More modular
+        More role-oriented
+        Easier to extend
+        Protocol-aware
+    - Managed by the Kubernetes SIG Network community.
+    - Core Gateway API Resources
+        Resource	    Purpose
+        GatewayClass	Defines implementation
+        Gateway	        Entry point/load balancer
+        HTTPRoute	    HTTP routing rules
+        TCPRoute	    TCP traffic rules
+        GRPCRoute	    gRPC routing
+        TLSRoute	    TLS passthrough
+    - Gateway API Architecture
+        Internet
+            |
+            v
+        Gateway
+            |
+            +---- HTTPRoute ---> Service A
+            |
+            +---- HTTPRoute ---> Service B
+    - Unlike Ingress, routing is separated cleanly.
+    - Example Gateway API
+        - Gateway
+            apiVersion: gateway.networking.k8s.io/v1
+            kind: Gateway
+            metadata:
+                name: shared-gateway
+            spec:
+                gatewayClassName: nginx
+                listeners:
+                - name: http
+                    protocol: HTTP
+                    port: 80
+        - HTTPRoute
+            apiVersion: gateway.networking.k8s.io/v1
+            kind: HTTPRoute
+            metadata:
+                name: app-route
+            spec:
+                parentRefs:
+                - name: shared-gateway
+                hostnames:
+                - app.example.com
+                rules:
+                - matches:
+                    - path:
+                        type: PathPrefix
+                        value: /
+                    backendRefs:
+                    - name: frontend-service
+                    port: 80
+
+5. Why Gateway API is Better:
+    1. Separation of Responsibilities
+    - Different teams can own different layers.
+        Team	        Resource
+        Platform Team	Gateway
+        App Team	    HTTPRoute
+    - Very important in enterprises.
+    2. Better Traffic Management
+        - Supports:
+            traffic splitting
+            canary deployments
+            header matching
+            retries
+            timeouts
+            mirroring
+        - Example:
+            90% traffic -> v1
+            10% traffic -> v2
+    3. Multi-Protocol Support
+        - Ingress:
+            Mainly HTTP/HTTPS
+        - Gateway API:
+            HTTP
+            HTTPS
+            TCP
+            UDP
+            gRPC
+            TLS
+    4. Portable Standard
+    - Ingress relied heavily on annotations:
+        annotations:
+            nginx.ingress.kubernetes.io/rewrite-target: /
+    - Gateway API standardizes many such features.
+
+6. Ingress vs Gateway API:
+    Feature	            Ingress	        Gateway API
+    Simplicity	        Simple	        More advanced
+    Protocol support	Mostly HTTP	    Multi-protocol
+    Extensibility	    Limited	        High
+    Role separation	    Weak	        Strong
+    Traffic policies	Basic	        Advanced
+    Future direction	Legacy-ish	    Kubernetes future
+    - Use Ingress if:
+        Small/simple setup
+        Basic HTTP routing
+        Quick deployments
+        Existing mature setup
+    - Use Gateway API if:
+        Large platforms
+        Multi-team environments
+        Advanced traffic management
+        gRPC/TCP needs
+        Long-term architecture
+
+7. What is NetworkPolicy:
+    - A NetworkPolicy controls which Pods can communicate with other Pods.
+    - It is basically a Kubernetes firewall.
+    - Without NetworkPolicy:
+        Every Pod can talk to every other Pod
+    - This is usually insecure.
+    
+    - Why NetworkPolicy Matters
+        - Imagine: frontend -> backend -> database
+        - You want:
+            frontend can call backend
+            backend can call database
+            frontend CANNOT directly call database
+        NetworkPolicy enforces this.
+        - Traffic Types
+            - Ingress Traffic
+            Traffic coming into a Pod.
+                Other Pod ---> Target Pod
+            - Egress Traffic
+            Traffic leaving a Pod.
+                Target Pod ---> External/Internal destination
+        - Example NetworkPolicy
+        - Allow frontend to access backend
+            apiVersion: networking.k8s.io/v1
+            kind: NetworkPolicy
+            metadata:
+                name: backend-policy
+            spec:
+                podSelector:
+                    matchLabels:
+                        app: backend
+                policyTypes:
+                    - Ingress
+                ingress:
+                - from:
+                    - podSelector:
+                        matchLabels:
+                            app: frontend
+        - Meaning: Only frontend Pods can access backend Pods
+
+    - Default Behavior
+        - Without NetworkPolicy
+            ALLOW ALL
+        - With NetworkPolicy
+        Once a Pod is selected by a policy:
+            DENY ALL except explicitly allowed
+        This is critical.
+        Default Deny Example
+            apiVersion: networking.k8s.io/v1
+            kind: NetworkPolicy
+            metadata:
+                name: default-deny
+            spec:
+                podSelector: {}
+                policyTypes:
+                - Ingress
+        This blocks all incoming traffic to all Pods in the namespace.
+
+    - Real-World Zero Trust Model
+        - Typical production setup:
+            Internet
+                |
+            Ingress/Gateway
+                |
+            Frontend Pods
+                |
+            Backend Pods
+                |
+            Database Pods
+        - With NetworkPolicies:
+            frontend only talks to backend
+            backend only talks to DB
+            monitoring allowed selectively
+            DNS explicitly allowed
+            everything else denied
+
+    - Important Limitation
+        - NetworkPolicy only works if your CNI plugin supports it.
+        - Supported CNIs include:
+            Calico
+            Cilium
+            Antrea
+        - Basic CNIs may ignore policies.
+    
+    - How These Concepts Work Together
+        - Full Traffic Flow
+                External Traffic
+                       |
+                       v
+              Ingress / Gateway API
+                       |
+                       v
+                 Kubernetes Services
+                       |
+                       v
+                      Pods
+                       |
+            NetworkPolicy controls access
+        - Simple Mental Model
+            Ingress: "How does outside traffic enter my cluster?"
+            Gateway API: "How do I manage modern, advanced traffic routing?"
+            NetworkPolicy: "Which Pods are allowed to talk to which Pods?"
+    
+    - Practical Example
+        - Imagine an e-commerce system:
+        Component	        Role
+        Gateway API	        Routes customer traffic
+        frontend service	UI
+        payment service	    Payment logic
+        database	        Stores orders
+        NetworkPolicy	    Prevents unauthorized communication
+
+    - Flow:
+        User
+            |
+        Gateway
+            |
+        Frontend
+            |
+        Payment Service
+            |
+        Database
+    
+    - Policies ensure:
+        frontend cannot access DB directly
+        only payment service accesses DB
+        only gateway exposes frontend
