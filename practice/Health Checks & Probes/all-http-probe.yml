@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: all-http-probe
+spec:
+  containers:
+    - name: app
+      image: nginx:latest
+      ports:
+        - containerPort: 3000
+
+      # =========================
+      # 🚀 STARTUP PROBE
+      # =========================
+
+      startupProbe:
+        httpGet:
+          path: /startup
+          port: 3000
+        failureThreshold: 30
+        periodSeconds: 5
+
+      # =========================
+      # 🟢 READINESS PROBE
+      # =========================
+
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: 3000
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        timeoutSeconds: 2
+        failureThreshold: 3
+
+      # =========================
+      # 🚨 LIVENESS PROBE (HTTP)
+      # =========================
+
+      livenessProbe:
+        httpGet:
+          path: /health
+          port: 3000
+        initialDelaySeconds: 10
+        periodSeconds: 15
+        timeoutSeconds: 2
+        failureThreshold: 3

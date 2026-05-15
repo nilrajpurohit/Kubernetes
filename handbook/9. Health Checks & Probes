@@ -1,0 +1,77 @@
+1. Health Checks & Probes:
+    - In Kubernetes, health checks (Probes) are ways for the system to continuously check whether your application inside a container is working properly or not.
+    - Think of Kubernetes like a manager running your app. It doesn’t just start your app and forget it—it keeps asking:
+        “Are you alive?”
+        “Are you ready to serve users?”
+        “Should I restart you?”
+    - That’s exactly what probes do.
+    
+    - Types of Kubernetes Probes
+    1. Liveness Probe (Is the app alive?)
+        This checks: “Is the container stuck or crashed internally?”
+        If it fails: Kubernetes restarts the container
+        Example idea: Your Node.js app is running but stuck in an infinite loop → liveness probe detects it and restarts it.
+        Use case:
+            Deadlocks
+            Memory leaks
+            Frozen apps
+    2. Readiness Probe (Is the app ready to receive traffic?)
+        This checks: “Can this app accept user requests right now?”
+        If it fails:    
+            Kubernetes removes the pod from Service traffic
+            BUT it does NOT restart the container
+        Example idea: Your app is running but still loading database connections → not ready yet.
+        Use case:
+            Startup delay
+            Dependency loading (DB, APIs)
+            Heavy initialization tasks
+    3. Startup Probe (Is the app finished starting?)
+        This is for slow-starting apps.
+        It checks: “Has the app fully started yet?”
+        If startup probe is enabled:
+            Liveness & readiness are paused until startup succeeds
+            Prevents premature restarts
+        Use case:
+            Java Spring Boot apps
+            Large ML models
+            Heavy initialization containers
+    
+    - How probes work (simple flow)
+        Container starts
+        Startup probe runs (optional)
+        Liveness probe keeps checking: “still alive?”
+        Readiness probe checks: “send traffic or not?”
+    - Example YAML (simple)
+        livenessProbe:
+            httpGet:
+                path: /health
+                port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+        readinessProbe:
+            httpGet:
+                path: /ready
+                port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+    - Real-world analogy
+        Imagine a restaurant:
+            Liveness probe → Is the chef unconscious? (restart chef 😄)
+            Readiness probe → Is food actually ready to serve? (don’t send customers yet)
+            Startup probe → Is the kitchen even open yet?
+    
+    - Why probes are important
+        Without probes:
+            Kubernetes may send traffic to broken apps
+            Or keep dead apps running forever
+        With probes:
+            Better reliability
+            Auto-healing systems
+            Zero-downtime deployments
+
+2. When to use what:
+    Type	        HTTP	    TCP	    Exec
+    Web apps	    Best	    Basic	Optional
+    DB / Redis	    Sometimes	Best	Rare
+    Complex logic	Good	    No	    Best

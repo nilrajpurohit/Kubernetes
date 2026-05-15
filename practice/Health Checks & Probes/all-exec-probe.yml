@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: all-exec-probe
+spec:
+  containers:
+    - name: app
+      image: nginx:latest
+      ports:
+        - containerPort: 3000
+
+      # =========================
+      # 🚀 STARTUP PROBE (EXEC)
+      # =========================
+
+      startupProbe:
+        exec:
+          command:
+            - sh
+            - -c
+            - "test -f /tmp/startup"
+        failureThreshold: 30
+        periodSeconds: 5
+
+      # =========================
+      # 🟢 READINESS PROBE (EXEC)
+      # =========================
+
+      readinessProbe:
+        exec:
+          command:
+            - sh
+            - -c
+            - "test -f /tmp/ready"
+        initialDelaySeconds: 5
+        periodSeconds: 5
+
+      # =========================
+      # 🚨 LIVENESS PROBE (EXEC)
+      # =========================
+
+      livenessProbe:
+        exec:
+          command:
+            - sh
+            - -c
+            - "curl -f http://localhost:3000/health || exit 1"
+        initialDelaySeconds: 10
+        periodSeconds: 10
+        failureThreshold: 3

@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: all-tcp-probe
+spec:
+  containers:
+    - name: app
+      image: nginx:latest
+      ports:
+        - containerPort: 3000
+
+      # =========================
+      # 🚀 STARTUP PROBE (TCP)
+      # =========================
+
+      startupProbe:
+        tcpSocket:
+          port: 3000
+        failureThreshold: 30
+        periodSeconds: 5
+
+      # =========================
+      # 🟢 READINESS PROBE (TCP)
+      # =========================
+
+      readinessProbe:
+        tcpSocket:
+          port: 3000
+        failureThreshold: 30
+        periodSeconds: 5
+
+      # =========================
+      # 🚨 LIVENESS PROBE (TCP)
+      # =========================
+
+      livenessProbe:
+        tcpSocket:
+          port: 3000
+        initialDelaySeconds: 10
+        periodSeconds: 10
+        failureThreshold: 3

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ml-training
+spec:
+  containers:
+  - name: ml
+    image: tensorflow/tensorflow
+
+  tolerations:
+  - key: "accelerator"
+    operator: "Equal"
+    value: "gpu"
+    effect: "NoSchedule"
+
+  nodeSelector:
+    accelerator: gpu

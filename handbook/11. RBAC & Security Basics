@@ -1,0 +1,93 @@
+1. RBAC & Security Basics:
+    - Kubernetes RBAC & Security Basics is basically about “who can do what inside a Kubernetes cluster” and how Kubernetes protects your workloads from unauthorized access.
+
+2. What is Security in Kubernetes:
+    - Security in Kubernetes has 3 main layers:
+    1) Authentication (Who are you?)
+        Kubernetes first checks:
+            Are you a valid user/system?
+            Example: admin, developer, CI/CD system
+        Methods:
+            Certificates
+            Tokens
+            Cloud IAM (AWS/GCP/Azure)
+    2) Authorization (What can you do?)
+        This is where RBAC (Role-Based Access Control) comes in.
+        It decides:
+            Can you create pods?
+            Can you delete deployments?
+            Can you view secrets?
+    3) Admission Control (Should we allow this request?)
+        Even if you're allowed, Kubernetes can still block actions using policies:
+            security rules
+            image restrictions
+            resource limits
+            policy engines (like OPA/Gatekeeper)
+
+3. What is RBAC in Kubernetes:
+    - RBAC = Role-Based Access Control
+    It means: Permissions are assigned based on roles, not directly to users.
+    - Core RBAC Components
+    1. User / Group / ServiceAccount
+        User → human (dev, admin)
+        ServiceAccount → apps inside cluster (very important)
+        Group → collection of users
+        Example:
+            CI/CD pipeline uses a ServiceAccount to deploy apps
+    2. Role
+        A Role defines permissions inside a namespace
+        Example: “Can read pods in dev namespace”
+    3. ClusterRole
+        Like Role, but cluster-wide
+        Example:
+            “Can read nodes across cluster”
+            “Can manage all namespaces”
+    4. RoleBinding
+        Connects a Role to a User/ServiceAccount
+        Example: “Dev user can use Role in dev namespace”
+    5. ClusterRoleBinding
+        Same as RoleBinding but cluster-wide
+
+4. Example RBAC Rule:
+    - Role: allow reading pods
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: Role
+        metadata:
+            namespace: dev
+            name: pod-reader
+        rules:
+        - apiGroups: [""]
+            resources: ["pods"]
+            verbs: ["get", "list"]
+    
+    - Bind it to a user
+        kind: RoleBinding
+        metadata:
+            name: read-pods-binding
+            namespace: dev
+        subjects:
+        - kind: User
+            name: alice
+        roleRef:
+            kind: Role
+            name: pod-reader
+            apiGroup: rbac.authorization.k8s.io
+
+5. Important Difference Summary:
+    Resource	        Scope	        Used For
+    Role	            Namespace only	Namespace permissions
+    RoleBinding	        Namespace only	Attach Role
+    ClusterRole	        Cluster-wide	Nodes, storageclasses, reusable permissions
+    ClusterRoleBinding	Cluster-wide	Attach ClusterRole globally
+
+6. Common RBAC Verbs:
+    Verb	            Meaning
+    get	                Read single resource
+    list	            List resources
+    watch	            Watch changes
+    create	            Create resource
+    update	            Modify existing
+    patch	            Partial update
+    delete	            Delete resource
+    deletecollection	Delete multiple
+    impersonate	        Act as another user

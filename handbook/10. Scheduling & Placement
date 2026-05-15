@@ -1,0 +1,63 @@
+1. Scheduling & Placement:
+    - These three concepts—Node Affinity, Pod Affinity, and Taints & Tolerations—are all about controlling where Kubernetes puts your Pods (i.e., scheduling decisions).
+    - Think of Kubernetes as a “smart delivery system” placing containers (Pods) onto machines (Nodes). These rules help you influence that placement.
+
+2. Node Affinity (choose a type of machine):
+    - Node Affinity is like saying: “I want my app to run only on certain types of machines.”
+    - For example:
+        “Run this Pod only on high-memory nodes”
+        “Run this only on Linux nodes in a specific zone”
+    - Simple analogy
+    Like ordering food and saying:
+        “Deliver only if the rider has a bike, not a cycle.”
+    - How it works
+    Nodes have labels like:
+        disktype=ssd
+        zone=ap-south-1
+        gpu=true
+    You tell Kubernetes:
+        “Place my Pod only on nodes with these labels.”
+    - Types
+        Required (hard rule) → Pod MUST go there or not run
+        Preferred (soft rule) → Try to go there, but not mandatory
+
+3. Pod Affinity (place Pods near each other):
+    - Pod Affinity is about Pods, not machines.
+    - It means: “Place this Pod near another Pod.”
+    - Example use case
+        You have:
+            Backend API Pod
+            Database Pod
+        You want: “Keep backend close to database for faster communication.”
+    - Simple analogy
+        Like saying: “Seat my friends near each other in a movie theatre.”
+    - Why it’s used
+        Low latency communication
+        Better performance
+        Same zone / same node grouping
+    - There is also: Pod Anti-Affinity → “Don’t place these Pods together” (for high availability)
+    - Example: Don’t put two replicas of a database on the same node.
+
+4. Taints & Tolerations (keep unwanted Pods out)
+    - This is the most “security gate” style concept.
+    - Taint (on Node)
+        A Node says: “I will NOT accept Pods unless they explicitly say they are allowed.”
+    - Example:
+        Node = GPU machine
+        Taint = “Only GPU workloads allowed”
+    - Toleration (on Pod)
+    Pod says: “I am allowed to be here despite the restriction.”
+    - Simple analogy
+        Imagine a VIP club:
+            Taint = Bouncer at the door (“No entry unless VIP”)
+            Toleration = VIP pass
+    - Why it's useful
+        Keep special workloads on special nodes (GPU, memory-heavy)
+        Prevent normal apps from landing on critical nodes
+        Isolate system workloads
+
+5. How they differ (very important):
+    Concept	Focus	        Controls
+    Node Affinity	        Node selection	“Where should my Pod go?”
+    Pod Affinity	        Pod placement near other Pods	“Which Pods should be together?”
+    Taints & Tolerations	Node exclusion	“Who is NOT allowed here unless permitted?”

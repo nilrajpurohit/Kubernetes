@@ -1,0 +1,38 @@
+# Imagine your Cluster Nodes
+
+# We have 3 nodes:
+# node-1 → SSD + general workload
+# node-2 → SSD + database zone
+# node-3 → GPU node (restricted)
+
+# Add labels to nodes
+# kubectl label node node-1 disktype=ssd zone=frontend
+# kubectl label node node-2 disktype=ssd zone=database
+# kubectl label node node-3 accelerator=gpu
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mysql-db
+  labels:
+    app: mysql
+spec:
+  containers:
+  - name: mysql
+    image: mysql:8
+    env:
+    - name: MYSQL_ROOT_PASSWORD
+      value: root
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: disktype
+            operator: In
+            values:
+            - ssd
+          - key: zone
+            operator: In
+            values:
+            - database
