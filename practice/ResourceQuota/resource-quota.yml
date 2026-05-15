@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: compute-quota
+  namespace: quota-demo
+spec:
+  hard:
+    # 🔹 Total CPU requests allowed in namespace
+    requests.cpu: "1"
+    # 🔹 Total Memory requests allowed
+    requests.memory: 1Gi
+    # 🔹 Total CPU limits allowed
+    limits.cpu: "2"
+    # 🔹 Total Memory limits allowed
+    limits.memory: 2Gi
+    # 🔹 Max number of pods allowed
+    pods: "3"
+    # 🔹 Optional: restrict services
+    services: "5"
+    # 🔹 Optional: restrict PVCs
+    persistentvolumeclaims: "2"

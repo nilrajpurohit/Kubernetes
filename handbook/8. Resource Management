@@ -1,0 +1,254 @@
+1. Resource Management:
+    - In Kubernetes, Resource Management means:
+    - “How much CPU and RAM each container/pod is allowed to use.”
+    - Think of a Kubernetes cluster like a big apartment building.
+        Pods = tenants
+        CPU/RAM = electricity + water
+        Kubernetes must stop one tenant from consuming everything.
+    - That’s where:
+        Requests
+        Limits
+        LimitRange
+        ResourceQuota
+    come in.
+
+2. Requests & Limits
+    - These are set on containers inside a Pod.
+    - Requests = Minimum Guaranteed Resources
+        This tells Kubernetes:
+        “Please reserve this much CPU/RAM for me.”
+        Example:
+            resources:
+                requests:
+                    memory: "256Mi"
+                    cpu: "200m"
+        Meaning:
+            Reserve:
+                256MB RAM
+                0.2 CPU core
+        Kubernetes uses this while scheduling Pods.
+        If a node doesn’t have enough free resources,
+        the Pod will NOT be placed there.
+
+    - Limits = Maximum Allowed Resources
+        This tells Kubernetes:
+        “Do not let me cross this limit.”
+        Example:
+        resources:
+            limits:
+                memory: "512Mi"
+                cpu: "500m"
+        Meaning:
+            Max RAM = 512MB
+            Max CPU = 0.5 core
+
+    - Real-Life Analogy
+    Imagine a hotel buffet.
+        Request = reserved food for you
+        Limit = maximum plates you can take
+    So:
+        Type	Meaning
+        Request	Minimum guaranteed
+        Limit	Maximum allowed
+
+3. What Happens If Limit Crosses:
+    - CPU Limit Crossed
+    - Kubernetes throttles/slows the container.
+        Like: “Bro, slow down.”
+    - Memory Limit Crossed
+        Container gets killed with:
+            OOMKilled
+        (OOM = Out Of Memory)
+        Because RAM cannot be safely overused.
+        - Full Example
+            apiVersion: v1
+            kind: Pod
+            metadata:
+                name: nginx
+            spec:
+                containers:
+                - name: nginx
+                    image: nginx
+                resources:
+                    requests:
+                        memory: "128Mi"
+                        cpu: "100m"
+                    limits:
+                        memory: "256Mi"
+                        cpu: "500m"
+    - CPU Units Explained
+    1000m = 1 CPU core
+    - Examples:
+        Value	Meaning
+        100m	0.1 CPU
+        500m	0.5 CPU
+        1000m	1 CPU
+    - Memory Units Explained
+        Value	Meaning
+        Mi	Mebibyte
+        Gi	Gibibyte
+    - Examples:
+        Value	Approx
+        128Mi	128MB
+        1Gi	    1024MB
+
+4. LimitRange
+    - A LimitRange sets default/min/max resource rules inside a Namespace.
+    - Think: “Every Pod in this namespace must follow these rules.”
+    
+    - Why Needed
+    Sometimes developers forget to add:
+        resources:
+    Without limits:
+        One Pod may consume all RAM
+        Cluster becomes unstable
+    LimitRange prevents this.
+    - Example
+        apiVersion: v1
+        kind: LimitRange
+        metadata:
+            name: mem-limit-range
+        spec:
+            limits:
+            - default:
+                memory: 512Mi
+                cpu: 500m
+            defaultRequest:
+                memory: 256Mi
+                cpu: 200m
+            type: Container
+
+    - What This Does
+    If developer creates Pod WITHOUT resources:
+    Kubernetes automatically applies:
+        requests:
+            memory: 256Mi
+            cpu: 200m
+        limits:
+            memory: 512Mi
+            cpu: 500m
+    - LimitRange Can Also Restrict
+    Example:
+        max:
+            memory: 1Gi
+        min:
+            memory: 128Mi
+    Meaning:
+        cannot exceed 1Gi
+        cannot go below 128Mi
+
+5. ResourceQuota
+    - ResourceQuota controls TOTAL resource usage for a Namespace.
+        - Think: “This team can only use this much overall.”
+    - Real-Life Analogy
+        Company office:
+            Team A gets:
+            8 CPUs
+            16GB RAM
+            20 Pods
+        Even if they create many apps,
+        they cannot cross that quota.
+    - Example
+        apiVersion: v1
+        kind: ResourceQuota
+        metadata:
+            name: team-a-quota
+        spec:
+            hard:
+                requests.cpu: "4"
+                requests.memory: 4Gi
+                limits.cpu: "8"
+                limits.memory: 8Gi
+                pods: "10"
+    - Meaning
+    Namespace total cannot exceed:
+        Resource	    Limit
+        Requested CPU	4 cores
+        Requested RAM	4Gi
+        CPU Limits	    8 cores
+        Memory Limits	8Gi
+        Pods	        10
+
+    - If Quota Exceeded?
+        Pod creation fails.
+        Example error:
+            exceeded quota
+    - Big Picture
+        Cluster
+        ├── Namespace A
+        │     ├── ResourceQuota
+        │     ├── LimitRange
+        │     └── Pods
+        │
+        └── Namespace B
+
+6. Difference Between LimitRange vs ResourceQuota
+    Feature	    LimitRange	                ResourceQuota
+    Applies To	Individual Pod/Container	Entire Namespace
+    Purpose	    Default/min/max values	    Total usage control
+    Prevents	Bad Pod configs	            Team overconsumption
+
+7. QoS (Quality of Service) Classes:
+    - In Kubernetes, QoS (Quality of Service) classes define how Pods are prioritized when the node is under pressure (CPU/memory shortage).
+    - There are 3 QoS classes:
+        - Guaranteed (highest priority)
+        - Burstable (middle)
+        - BestEffort (lowest priority)
+    - Kubernetes uses these during evictions (when node runs out of memory/CPU).
+
+    - 1. Guaranteed QoS (Top Priority)
+        - Rule: Every container in the Pod must have:
+            CPU request = CPU limit
+            Memory request = Memory limit
+            AND all containers must define both
+        - Example:
+            apiVersion: v1
+            kind: Pod
+            metadata:
+                name: guaranteed-pod
+            spec:
+                containers:
+                - name: app
+                    image: nginx
+                    resources:
+                        requests:
+                            cpu: "500m"
+                            memory: "256Mi"
+                        limits:
+                            cpu: "500m"
+                            memory: "256Mi"
+    
+    - 2. Burstable QoS (Middle Priority)
+        - Rule:
+            Requests and limits are defined
+            BUT they are NOT equal OR multiple containers vary
+        - Example:
+            apiVersion: v1
+            kind: Pod
+            metadata:
+                name: burstable-pod
+            spec:
+                containers:
+                - name: app
+                    image: nginx
+                    resources:
+                        requests:
+                            cpu: "200m"
+                            memory: "128Mi"
+                        limits:
+                            cpu: "1"
+                            memory: "512Mi"
+    
+    - 3. BestEffort QoS (Lowest Priority)
+        - Rule:
+            NO requests
+            NO limits
+        - Example:
+            apiVersion: v1
+            kind: Pod
+            metadata:
+                name: besteffort-pod
+            spec:
+                containers:
+                - name: app
+                    image: nginx

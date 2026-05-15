@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: cpu-memory-limit-range
+  namespace: limits-demo
+spec:
+  limits:
+  # 🔹 Applies to all containers
+  - type: Container
+    # Minimum allowed resources
+    min:
+      cpu: "50m"
+      memory: "64Mi"
+    # Maximum allowed resources
+    max:
+      cpu: "1"
+      memory: "512Mi"
+    # Default values if user does NOT specify requests/limits
+    default:
+      cpu: "200m"
+      memory: "256Mi"
+    # Default requests if user does NOT specify them
+    defaultRequest:
+      cpu: "100m"
+      memory: "128Mi"
+  # 🔹 Optional: Pod-level constraints
+  - type: Pod
+    max:
+      cpu: "2"
+      memory: "1Gi"

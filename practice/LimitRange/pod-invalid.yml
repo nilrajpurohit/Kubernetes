@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: invalid-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    resources:
+      requests:
+        cpu: "2"        # ❌ exceeds max CPU (1 core)
+        memory: "2Gi"   # ❌ exceeds max memory (512Mi)
+
+# Expected error:
+# CPU request exceeds max limit
+# Memory request exceeds max limit
+# Kubernetes will reject the pod immediately.
