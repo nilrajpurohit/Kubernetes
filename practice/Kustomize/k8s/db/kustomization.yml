@@ -1,0 +1,4 @@
+resources:
+- db-depl.yml
+- db-config.yml
+- db-service.yml

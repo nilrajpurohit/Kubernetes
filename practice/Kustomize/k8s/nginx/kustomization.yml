@@ -1,0 +1,3 @@
+resources:
+- nginx-depl.yml
+- nginx-service.yml

@@ -1,0 +1,93 @@
+1. What is Kustomize:
+    - Kustomize is a native Kubernetes configuration customization tool. It lets you manage Kubernetes YAML manifests without using templates.
+    - Instead of writing templates with variables, you define a base configuration and then create overlays for different environments like dev, staging, and production.
+    - Core idea
+        - You keep plain Kubernetes YAML files:
+            # deployment.yaml
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+                name: my-app
+            spec:
+                replicas: 2
+        - Then customize them per environment using kustomization.yaml.
+        - Example:
+            # overlays/prod/kustomization.yaml
+            resources:
+                - ../../base
+            replicas:
+                - name: my-app
+                    count: 5
+            namespace: production
+        - Kustomize builds the final YAML:
+            kubectl kustomize overlays/prod
+        or
+            kubectl apply -k overlays/prod
+
+2. Kustomize Main features:
+    - 1. Base + Overlay structure
+        Typical layout:
+            project/
+            ├── base/
+            │   ├── deployment.yaml
+            │   ├── service.yaml
+            │   └── kustomization.yaml
+            │
+            └── overlays/
+                ├── dev/
+                └── prod/
+        This is the biggest advantage of Kustomize.
+    - 2. No templating language
+        Unlike Helm, Kustomize does not use Go templates like:
+            {{ .Values.image.tag }}
+        You work with real YAML only.
+        That makes configs:
+            easier to read
+            easier to validate
+            closer to actual Kubernetes manifests
+    - 3. Patching
+        You can modify only the parts you need.
+        Example patch:
+            # patch.yaml
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+                name: my-app
+            spec:
+                template:
+                    spec:
+                        containers:
+                            - name: app
+                            image: myapp:v2
+        Applied through:
+            patches:
+                - path: patch.yaml
+
+3. Common use cases:
+    Kustomize is great for:
+        Multiple environments (dev/staging/prod)
+        GitOps workflows
+        Small to medium Kubernetes deployments
+        Teams that prefer plain YAML
+        Incremental customization
+
+4. Helm vs Kustomize:
+    Feature	        Kustomize	                Helm
+    Style	        YAML overlays	            Templates
+    Complexity	    Simpler	                    More powerful
+    Learning curve	Easier	                    Higher
+    Reusability	    Moderate	                High
+    Packaging	    No	                        Yes
+    Best for	    Environment customization	Application distribution
+
+5. When to choose Kustomize:
+    Choose Kustomize if:
+        you mainly manage your own apps
+        you want simple environment differences
+        you dislike template-heavy YAML
+        you use GitOps tools like Argo CD or Flux
+    Choose Helm if:
+        you need reusable charts
+        you install third-party apps often
+        you need advanced parameterization
+        you distribute applications to others
