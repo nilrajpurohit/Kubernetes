@@ -1,0 +1,153 @@
+1. What is Helm in Kubernetes:
+    - Helm is often called the package manager for Kubernetes.
+    - It helps you:
+        Install applications on Kubernetes easily
+        Manage configuration
+        Upgrade or rollback deployments
+        Reuse deployment templates
+    - Instead of writing dozens of raw YAML files manually, Helm lets you package everything into a reusable unit called a Helm Chart.
+
+2. What is a Helm Chart:
+    - A Helm Chart is a collection of Kubernetes YAML templates + configuration values.
+    - Think of it like:
+        Technology	Package Format
+        Ubuntu	    .deb
+        Node.js	    npm package
+        Python	    pip package
+        Kubernetes	Helm Chart
+    - A chart can include:
+        Deployments
+        Services
+        Ingress
+        ConfigMaps
+        Secrets
+        Autoscaling
+        Monitoring configs
+
+3. Why Helm is Popular:
+    - Without Helm:
+        kubectl apply -f deployment.yaml
+        kubectl apply -f service.yaml
+        kubectl apply -f ingress.yaml
+        kubectl apply -f configmap.yaml
+    - With Helm:
+        helm install myapp ./mychart
+    - Helm handles:
+        templating
+        versioning
+        upgrades
+        rollbacks
+        configuration overrides
+
+4. Helm Architecture:
+    - Components
+        1. Helm CLI
+            The command-line tool you use:
+                helm install
+                helm upgrade
+                helm rollback
+        2. Chart
+            The application package.
+        3. Release
+            A running instance of a chart in the cluster.
+        - Example:
+            helm install prod-nginx bitnami/nginx
+        Chart = bitnami/nginx
+        Release = prod-nginx
+
+5. Basic Helm Workflow:
+    Add Repository
+        helm repo add bitnami https://charts.bitnami.com/bitnami
+    Update Repositories
+        helm repo update
+    Search Charts
+        helm search repo nginx
+    Install Chart
+        helm install my-nginx bitnami/nginx
+    List Releases
+        helm list
+    Upgrade
+        helm upgrade my-nginx bitnami/nginx
+    Rollback
+        helm rollback my-nginx 1
+    Uninstall
+        helm uninstall my-nginx
+
+6. Helm Chart Structure
+    - Typical structure:
+        mychart/
+        ├── Chart.yaml
+        ├── values.yaml
+        ├── charts/
+        ├── templates/
+        │   ├── deployment.yaml
+        │   ├── service.yaml
+        │   └── ingress.yaml
+        └── templates/_helpers.tpl
+    
+    - Important Files
+        Chart.yaml
+    - Metadata about the chart.
+    - Example:
+        apiVersion: v2
+        name: myapp
+        version: 1.0.0
+        appVersion: "2.1"
+
+    - values.yaml
+    - Default configuration values.
+    - Example:
+        replicaCount: 2
+        image:
+            repository: nginx
+            tag: latest
+        service:
+            type: ClusterIP
+            port: 80
+
+    - templates/
+    - Contains Kubernetes manifest templates.
+    - Example:
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+            name: {{ .Release.Name }}
+    - Helm uses Go templating syntax:
+        {{ .Values.replicaCount }}
+
+7. How Templating Works
+    If:
+        # values.yaml
+        replicaCount: 3
+    And template:
+        replicas: {{ .Values.replicaCount }}
+    Generated YAML becomes:
+        replicas: 3
+
+8. Override Values
+    You can customize installations.
+    Using CLI
+        helm install myapp bitnami/nginx \
+            --set service.type=NodePort
+    Using Custom Values File
+        helm install myapp bitnami/nginx -f prod-values.yaml
+    This is extremely common for:
+        dev
+        staging
+        production
+
+9. Helm + Kustomize
+    - Since you asked earlier about Kustomize:
+        Helm	                    Kustomize
+        Package manager	            Overlay/customization tool
+        Uses templates	            Pure YAML patches
+        Great for reusable apps	    Great for environment customization
+        Has chart repositories	    No package ecosystem
+        More dynamic	            Simpler and Kubernetes-native
+    - You can even combine them:
+        Helm generates manifests
+        Kustomize customizes them
+    - Example:
+        helm template myapp chart/ > output.yaml
+    - Then apply Kustomize overlays.
+
