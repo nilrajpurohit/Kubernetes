@@ -1,0 +1,259 @@
+1. Troubleshooting Kubernetes:
+    - In Kubernetes, troubleshooting is the process of identifying, isolating, and fixing problems across the cluster, workloads, networking, storage, or infrastructure.
+    - The important concept is:
+        Kubernetes is a distributed system, so troubleshooting means tracing problems layer by layer.
+    - Kubernetes Troubleshooting Concept
+        Think of Kubernetes as multiple layers working together:
+            Application
+                ↓
+            Container
+                ↓
+            Pod
+                ↓
+            Node
+                ↓
+            Cluster Components
+                ↓
+            Infrastructure / Cloud
+    - A failure can happen at any layer.
+
+2. Observe Symptoms:
+    - Start with:
+        What is failing?
+        Is it application-level or cluster-level?
+        Is the issue isolated or widespread?
+    - Examples:
+        Website unavailable
+        Pod restarting
+        Service unreachable
+        Deployment stuck
+        Node NotReady
+
+3. Identify the Object:
+    - Everything in Kubernetes is an object:
+        Pod
+        Deployment
+        Service
+        Node
+        Ingress
+        PVC
+        ConfigMap
+    - Find which object is involved.
+    - Example:
+        kubectl get pods
+        kubectl get svc
+        kubectl get nodes
+
+4. Describe the Object:
+    - The describe command is one of the most important troubleshooting tools.
+        kubectl describe pod nginx
+    - Why?
+    - Because Kubernetes records:
+        Events
+        Scheduling issues
+        Probe failures
+        Image pull problems
+        Mount failures
+    - This helps explain why something failed. 
+
+5. Check Logs:
+    - Kubernetes itself does not tell application errors.
+    - Application/container logs are critical.
+        kubectl logs <pod>
+    - This reveals:
+        Exceptions
+        Crashes
+        Startup failures
+        DB connection issues
+
+6. Understand Pod Lifecycle:
+    - A pod moves through states:
+        Pending → Running → Succeeded/Failed
+    - Troubleshooting often means understanding why it got stuck.
+    - Examples:
+        State	            Meaning
+        Pending	            Scheduler/resource issue
+        CrashLoopBackOff	App crashing repeatedly
+        ImagePullBackOff	Cannot download image
+        OOMKilled	        Out of memory
+        Error	            Container exited badly
+
+7. Follow Dependency Chain
+    - Kubernetes components depend on each other.
+    - Example:
+        User → Ingress → Service → Pod → Container
+    - If the app is unreachable:
+        Is ingress working?
+        Is service routing?
+        Are endpoints available?
+        Is pod healthy?
+        Is container listening?
+    - This is the main troubleshooting mindset.
+
+8. Kubernetes is Declarative
+    - You define:
+        desired state
+    - Kubernetes tries to match it.
+    - Troubleshooting means checking:
+        Desired state
+        Actual state
+        Why reconciliation failed
+    - Example:
+        Desired replicas = 3
+        Actual replicas = 1
+    - Why?
+        insufficient resources
+        image pull issue
+        failing readiness probe
+
+9. Control Plane vs Worker Node Issues
+    - Control Plane Problems
+        - Affect the whole cluster.
+        - Components:
+            API Server
+            Scheduler
+            Controller Manager
+            etcd
+        - Symptoms:
+            kubectl not working
+            Pods not scheduling
+    - Worker Node Problems
+        - Affect workloads only.
+        - Symptoms:
+            Pods crash on one node
+            Disk pressure
+            Memory pressure
+
+10. Events are Extremely Important
+    - Kubernetes produces events continuously.
+        kubectl get events
+    - Events explain:
+        scheduling failures
+        mount issues
+        probe failures
+        eviction reasons
+
+11. Networking Troubleshooting
+    - Kubernetes networking is a major troubleshooting area.
+    - Key concepts:
+        Pod IP
+        Service IP
+        DNS
+        CNI plugin
+        Ingress
+    - Typical flow:
+        DNS → Service → Endpoint → Pod
+
+12. Resource Troubleshooting
+    - Pods require:
+        CPU
+        Memory
+        Storage
+    - Problems occur when:
+        limits too low
+        requests too high
+        node exhausted
+    - Common issue:
+        OOMKilled
+    - Meaning:
+        Container exceeded memory limit.
+
+13. Readiness vs Liveness Probes
+    - Very important concept.
+    Liveness Probe
+        Checks: "Should container restart?"
+    Readiness Probe
+        Checks: "Can pod receive traffic?"
+    Misconfigured probes cause many production issues.
+
+14. Troubleshooting Approach (Golden Flow)
+    - A common systematic flow:
+        1. Identify symptom
+        2. Find affected object
+        3. Describe object
+        4. Check events
+        5. Check logs
+        6. Verify networking
+        7. Verify resources
+        8. Verify dependencies
+        9. Verify configuration
+        10. Verify infrastructure
+
+15. Troubleshooting Kubernetes Ways:
+    - usually follows a layered approach:
+    1. Check cluster health
+        kubectl cluster-info
+        kubectl get nodes
+        kubectl get pods -A
+    2. Inspect failing pods
+        kubectl describe pod <pod-name>
+        kubectl logs <pod-name>
+        kubectl logs <pod-name> -c <container-name>
+    3. Common pod states
+        CrashLoopBackOff → app crashing repeatedly
+        ImagePullBackOff → image registry/auth issue
+        Pending → scheduler/resource/storage issue
+        OOMKilled → memory limit exceeded
+    4. Check events
+        kubectl get events --sort-by=.metadata.creationTimestamp
+    5. Networking issues
+        kubectl get svc
+        kubectl get endpoints
+        kubectl exec -it <pod> -- curl <service>
+    6. Resource problems
+        kubectl top pods
+        kubectl top nodes
+    7. Debug inside containers
+        kubectl exec -it <pod> -- /bin/sh
+    8. Namespace confusion
+        kubectl get pods -n <namespace>
+    9. Deployment rollout issues
+        kubectl rollout status deployment/<name>
+        kubectl rollout history deployment/<name>
+    10. Useful troubleshooting docs
+        Kubernetes Debugging Applications Guide
+        kubectl Cheat Sheet
+    - If you share:
+        the error message,
+        pod status,
+        logs,
+        or YAML
+
+
+Explain me in simple non tech way,
+kubectl get svc,pv,pvc,storageclass,ns,deploy,replicaset,daemonset,statefulset,cronjob,job,ingress,networkpolicy,limitrange,resourcequota
+
+- Cluster
+- Namespace
+- ResourceQuota
+- LimitRange
+- Storage Class
+- Persistent Volume
+- Persistent Volume Claim
+- Deployment
+- ReplicaSet
+- Pod
+- Container
+- Requests & Limits
+- QoS Class (derived automatically)
+- Service
+- Ingress
+- External User Traffic
+
+- S3
+- EC2
+- Lambda
+- Route53
+- DNS
+- RateShift
+- CloundFront
+- CloudAge
+- CloudTrail
+- EKS
+- DataWarehouse
+- RDS
+- BeanStack
+- EBS
+- VPN, VPC
+
+kubectl port-forward service/my-argo-cd-argocd-server -n default 8080:443
