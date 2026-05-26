@@ -1,0 +1,194 @@
+1. Kubernetes GitOps & CI/CD Stack
+    - GitOps Tools
+        GitOps means:
+            Git repository = source of truth
+            Kubernetes cluster state is continuously reconciled from Git
+            Changes happen via pull requests instead of manual kubectl commands
+        The two dominant GitOps tools are:
+
+2. Argo CD
+    Argo CD Official Site
+    What it is
+        A Kubernetes-native GitOps continuous delivery tool.
+    Argo CD:
+        Watches Git repositories
+        Detects changes
+        Syncs Kubernetes manifests/Helm charts/Kustomize
+        Applies them to clusters automatically
+    Features
+        Web UI
+        RBAC
+        Multi-cluster support
+        Helm support
+        Kustomize support
+        Rollbacks
+        Drift detection
+        Application health monitoring
+    Best for
+        Teams wanting a strong UI
+        Enterprise Kubernetes platforms
+        Easier observability and debugging
+        Application-centric deployments
+    Typical Workflow
+        Developer pushes code
+                ↓
+        CI builds Docker image
+                ↓
+        CI updates Kubernetes manifests in Git
+                ↓
+        ArgoCD detects Git change
+                ↓
+        ArgoCD syncs cluster automatically
+
+3. Flux CD
+    Flux CD Official Site
+    What it is
+        A lightweight GitOps toolkit for Kubernetes.
+    Flux is more:
+        Modular
+        Kubernetes-native
+        CLI/operator driven
+    Features
+        Helm support
+        Kustomize support
+        OCI support
+        Image automation
+        Multi-tenancy
+        Progressive delivery integrations
+    Best for
+        Platform engineering teams
+        Kubernetes-native workflows
+        Minimalist setups
+        Advanced GitOps automation
+    Typical Workflow
+        Developer pushes code
+                ↓
+        CI builds/pushes image
+                ↓
+        Flux updates manifests automatically
+                ↓
+        Cluster reconciles desired state
+
+4. Argo CD vs Flux CD
+    Feature	            Argo CD	                Flux CD
+    UI	                Excellent built-in UI	Minimal
+    Learning curve	    Easier	                More Kubernetes-centric
+    Architecture	    App-focused	            Toolkit/operator-focused
+    GitOps style	    Pull-based	            Pull-based
+    Helm/Kustomize	    Yes	                    Yes
+    Multi-cluster	    Strong	                Strong
+    Enterprise adoption	Very high	            Very high
+    CNCF	            Graduated	            Graduated
+
+5. Quick Recommendation
+    - Choose Argo CD if:
+        You want visualization/UI
+        Easier onboarding
+        Simpler operations
+    - Choose Flux if:
+        You prefer pure Kubernetes-native tooling
+        Want modular automation
+        Have strong platform engineering maturity
+
+7. CI/CD Tools
+    - GitOps tools are usually paired with CI systems.
+    - The CI system:
+        Tests code
+        Builds Docker images
+        Pushes images
+        Updates GitOps manifests
+    - Then GitOps deploys.
+
+8. GitHub Actions
+    GitHub Actions Docs
+    What it is
+        CI/CD integrated into GitHub.
+    Common Kubernetes Workflow
+        - Run tests
+        - Build Docker image
+        - Push to Docker Hub/ECR/GCR
+        - Update Helm values.yaml
+        - Commit changes to GitOps repo
+    Strengths
+        Excellent GitHub integration
+        Easy setup
+        Great for open-source
+        Marketplace actions
+        Good Docker/K8s ecosystem
+    Best for
+        GitHub-hosted repositories
+        Small → enterprise teams
+        Simpler DevOps workflows
+
+9. GitLab CI/CD
+    GitLab CI/CD Docs
+    What it is
+    Built-in CI/CD inside GitLab.
+    Strengths
+        Complete DevSecOps platform
+        Integrated container registry
+        Security scanning
+        Kubernetes integrations
+        Strong self-hosting support
+    Best for
+        Enterprises
+        Self-hosted infrastructure
+        All-in-one DevOps platform
+    End-to-End GitOps Architecture
+        Typical Production Setup
+        Developer
+        ↓
+        Git Push
+        ↓
+        CI Pipeline (GitHub Actions / GitLab CI)
+        ↓
+        Run Tests
+        ↓
+        Build Docker Image
+        ↓
+        Push Image Registry
+        ↓
+        Update Helm/Kustomize Git Repo
+        ↓
+        ArgoCD / Flux detects changes
+        ↓
+        Kubernetes cluster syncs automatically
+    
+10. Recommended Stack Patterns
+    - Startup / Small Team
+        GitHub Actions
+        Argo CD
+        Helm
+        Docker Hub
+    Simple and productive.
+    - Enterprise Platform
+        GitLab CI
+        Flux CD
+        Helm + Kustomize
+        EKS/GKE/AKS
+        Vault + External Secrets
+    More scalable and policy-driven.
+
+11. Common Kubernetes Deployment Tools Used Together
+    Tool	                    Purpose
+    Helm	                    Package Kubernetes apps
+    Kustomize	                Environment overlays
+    Terraform	                Infrastructure provisioning
+    Prometheus	                Metrics monitoring
+    Grafana	                    Dashboards
+    External Secrets Operator	Secret management
+    Istio	                    Service mesh
+    NGINX Ingress Controller	Ingress traffic routing
+
+12. Real-World Example Repo Structure
+    app-repo/
+    ├── backend/
+    ├── frontend/
+    ├── .github/workflows/
+
+    gitops-repo/
+    ├── apps/
+    │    ├── dev/
+    │    ├── staging/
+    │    └── prod/
+    └── clusters/

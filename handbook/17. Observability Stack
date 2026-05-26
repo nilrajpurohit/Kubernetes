@@ -1,0 +1,174 @@
+1. Kubernetes Observability Stack:
+    - A Kubernetes observability stack gives you visibility into metrics, logs, traces, and alerts so you can understand system health, debug problems, and monitor applications.
+
+2. Metrics Monitoring — Prometheus
+    - What it does
+        Collects time-series metrics from:
+            Kubernetes nodes
+            Pods
+            Containers
+            Applications
+            Databases
+            Ingress controllers
+        Common Metrics
+            CPU usage
+            Memory usage
+            Request latency
+            Error rates
+            Pod restarts
+            Node health
+        Architecture
+            App Pods --> /metrics endpoint --> Prometheus --> Grafana
+        Key Components
+            Prometheus Server
+            kube-state-metrics
+            node-exporter
+            Alertmanager
+            ServiceMonitors
+        Install
+            Most people use:
+                Prometheus Operator (kube-prometheus-stack)
+                Prometheus Official Docs
+        Example Metric
+            http_requests_total
+        Example Query
+            rate(http_requests_total[5m])
+
+3. Visualization — Grafana
+    - What it does
+        Grafana visualizes:
+            Prometheus metrics
+            Logs
+            Traces
+            Alerts
+    - Features
+        Dashboards
+        Alert panels
+        Variables
+        Drill-down monitoring
+        Correlation between logs + traces + metrics
+    - Popular Dashboards
+        Kubernetes cluster monitoring
+        Node monitoring
+        NGINX ingress
+        PostgreSQL
+        Redis
+        Application performance
+    - Install
+        Grafana Official Site
+        Grafana Kubernetes Monitoring
+    - Flow
+        Prometheus --> Grafana Dashboard
+
+4. Logging Stack
+    - Purpose
+        Centralized log aggregation from:
+            Pods
+            Containers
+            Nodes
+            System services
+    - Popular Kubernetes Logging Stacks
+        Option A (Most Popular)
+            EFK Stack
+                Elasticsearch
+                Fluent Bit / Fluentd
+                Kibana
+            Flow
+                Pods --> Fluent Bit --> Elasticsearch --> Kibana
+        Option B (Modern + Lightweight)
+            Loki Stack
+                Recommended for Kubernetes beginners.
+            Components:
+                Loki
+                Promtail
+                Grafana
+            Flow
+                Pods --> Promtail --> Loki --> Grafana
+        - Why Loki?
+            Cheap storage
+            Lightweight
+            Native Grafana integration
+            Easier than Elasticsearch
+        - Install
+            Grafana Loki
+            Loki Helm Charts
+
+5. Distributed Tracing
+    - Purpose
+        Tracks requests across microservices.
+    - Example:
+        Frontend --> API --> Auth Service --> DB
+    - Tracing shows:
+        Request path
+        Latency per service
+        Bottlenecks
+        Failures
+    - Popular Tracing Tools
+        Jaeger
+            Created by Uber.
+        Tempo
+            Grafana’s tracing backend.
+        OpenTelemetry
+            Industry standard instrumentation framework.
+        Recommended Modern Stack
+            OpenTelemetry + Tempo + Grafana
+        Flow
+            Apps
+            ↓
+            OpenTelemetry SDK
+            ↓
+            OpenTelemetry Collector
+            ↓
+            Tempo / Jaeger
+            ↓
+            Grafana
+        Install
+            OpenTelemetry Docs
+            Grafana Tempo
+            Jaeger Docs
+
+6. Alerting
+    - Purpose
+        Notify when something goes wrong.
+    - Examples:
+        High CPU
+        Pod crash loops
+        Memory spikes
+        HTTP 500 increase
+        Node down
+    - Alerting Flow
+        Prometheus --> Alertmanager --> Slack/Email/PagerDuty
+    - Components
+        Prometheus alert rules
+        Alertmanager
+        Notification channels
+    - Example Rule
+        groups:
+        - name: high-cpu
+            rules:
+            - alert: HighCPUUsage
+                expr: cpu_usage > 80
+                for: 5m
+    - Install
+        Alertmanager Docs
+
+7. Complete Modern Kubernetes Observability Architecture
+                +----------------+
+                |    Grafana     |
+                +----------------+
+                    /      |      \
+                /       |       \
+                /        |        \
+        Metrics         Logs      Traces
+            |              |          |
+    +-------------+   +--------+  +--------+
+    | Prometheus  |   | Loki   |  | Tempo  |
+    +-------------+   +--------+  +--------+
+            |              |          |
+            +--------------+----------+
+                        |
+                OpenTelemetry Collector
+                        |
+        +-----------------+-----------------+
+        |                                   |
+    Kubernetes                        Applications

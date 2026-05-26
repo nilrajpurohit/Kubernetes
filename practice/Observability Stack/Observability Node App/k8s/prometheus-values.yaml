@@ -1,0 +1,42 @@
+grafana:
+  enabled: true
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  adminPassword: admin123
+
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+
+    hosts:
+      - grafana.local
+
+    path: /
+    pathType: Prefix
+
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
+
+    retention: 7d
+
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+
+          resources:
+            requests:
+              storage: 5Gi
+
+alertmanager:
+  enabled: true
+
+kubeStateMetrics:
+  enabled: true
+
+nodeExporter:
+  enabled: true

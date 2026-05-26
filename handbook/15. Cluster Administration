@@ -1,0 +1,197 @@
+1. Cluster Administartion:
+    - Cluster Administration in Kubernetes is about provisioning, securing, maintaining, and troubleshooting the control plane and worker nodes of a cluster.
+
+2. What is kubeadm:
+    - kubeadm is an official Kubernetes tool used to:
+        - Initialize a Kubernetes cluster
+        - Join worker/control-plane nodes
+        - Upgrade clusters
+        - Manage cluster certificates
+        - Bootstrap production-like clusters quickly
+    - It is not a full provisioning tool like Terraform or Ansible.
+    - It focuses only on Kubernetes cluster bootstrapping.
+
+3. kubeadm Architecture Flow:
+    - Typical flow:
+        Install container runtime (containerd)
+        Install kubeadm, kubelet, kubectl
+        Run:
+        kubeadm init
+    - This creates:
+        API Server
+        Scheduler
+        Controller Manager
+        etcd
+        PKI certificates
+        kubeconfig files
+    - Then worker nodes join using:
+        kubeadm join ...
+
+4. Important kubeadm Commands:
+    - Initialize Cluster: kubeadm init --pod-network-cidr=10.244.0.0/16
+    - Join Worker Node: kubeadm join <master-ip>:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash>
+    - Create Join Token: kubeadm token create --print-join-command
+    - Upgrade Cluster: 
+        kubeadm upgrade plan
+        kubeadm upgrade apply v1.31.0
+    - Reset Cluster
+        kubeadm reset
+
+5. kubeadm Configuration File:
+    - Instead of CLI flags:
+        apiVersion: kubeadm.k8s.io/v1beta3
+        kind: ClusterConfiguration
+        kubernetesVersion: v1.31.0
+        networking:
+            podSubnet: "10.244.0.0/16"
+    - Use with: kubeadm init --config config.yaml
+
+6. Where kubeadm Stores Important Files:
+    Path	                    Purpose
+    /etc/kubernetes/manifests/	Static pod manifests
+    /etc/kubernetes/pki/	    Certificates
+    /etc/kubernetes/admin.conf	Admin kubeconfig
+    /var/lib/etcd/	            etcd data
+    /var/lib/kubelet/	        kubelet data
+
+7. Static Pods:
+    - kubeadm deploys control-plane components as static pods.
+    - Examples:
+        kube-apiserver
+        kube-controller-manager
+        kube-scheduler
+        etcd
+    - Located at: /etc/kubernetes/manifests
+    - The kubelet watches this directory and automatically runs those pods.
+
+8. etcd Operations, What is etcd:
+    - etcd is the distributed key-value database used by Kubernetes.
+    - It stores:
+        Cluster state
+        Pods
+        Deployments
+        Secrets
+        ConfigMaps
+        RBAC
+        Nodes
+        Everything in Kubernetes
+    - If etcd is lost, the cluster state is lost.
+
+9. etcd Architecture:
+    - etcd uses:
+        Distributed consensus algorithm → Raft
+        Leader/Follower architecture
+        Strong consistency
+
+10. Important etcd Concepts:
+    Concept	    Meaning
+    Member	    etcd node
+    Cluster	    Group of etcd members
+    Leader	    Handles writes
+    Follower	Replicates data
+    Quorum	    Majority required
+
+    Example:
+        3-node etcd → quorum = 2
+        5-node etcd → quorum = 3
+    
+    etcdctl
+        Main CLI tool: etcdctl
+        Usually: export ETCDCTL_API=3
+
+11. etcd Backup:
+    - Very important admin task.
+    - Snapshot Backup
+        ETCDCTL_API=3 etcdctl snapshot save backup.db \
+        --endpoints=https://127.0.0.1:2379 \
+        --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+        --cert=/etc/kubernetes/pki/etcd/server.crt \
+        --key=/etc/kubernetes/pki/etcd/server.key
+    - Creates: backup.db
+    - Verify Snapshot: etcdctl snapshot status backup.db
+    - Restore etcd Snapshot: etcdctl snapshot restore backup.db --data-dir=/var/lib/etcd-restored
+    - Then update:
+        static pod manifest
+        data directory path
+    - etcd Health Check: etcdctl endpoint health
+    - Common etcd Ports
+        Port	Purpose
+        2379	Client communication
+        2380	Peer communication
+
+12. Certificate Management:
+    - Kubernetes heavily depends on TLS certificates for authentication and encryption.
+    - Every component communicates securely using certificates.
+    - Important Certificates
+        Cluster CA
+        Main certificate authority:
+            - /etc/kubernetes/pki/ca.crt
+            - /etc/kubernetes/pki/ca.key
+        Signs:
+            - API server certs
+            - kubelet certs
+            - admin certs
+    - API Server Certificates
+        Used by:
+            kube-apiserver
+        Files:
+            apiserver.crt
+            apiserver.key
+    - etcd Certificates
+        Used for secure etcd communication.
+        Examples:
+            etcd/server.crt
+            etcd/peer.crt
+    - kubeconfig Files
+        Contain:
+            cluster endpoint
+            certificates
+            credentials
+        Examples:
+        File	                Purpose
+        admin.conf	            Admin access
+        controller-manager.conf	Controller manager
+        scheduler.conf	        Scheduler
+        kubelet.conf	        kubelet
+    - Certificate Locations
+        /etc/kubernetes/pki/
+    - Check Certificate Expiration
+        Very important in production.
+        Using kubeadm: kubeadm certs check-expiration
+        Example output:
+            expiration date
+            residual time
+        Renew Certificates
+        - Renew All: kubeadm certs renew all
+        - Renew Specific Cert: kubeadm certs renew apiserver
+    Restart Components After Renewal
+    - Because control plane uses static pods: systemctl restart kubelet
+    or touch manifest files.
+    Manual OpenSSL Certificate Inspection
+        - openssl x509 -in apiserver.crt -text -noout
+        - Shows:
+            CN
+            SAN
+            expiration
+            issuer
+    - Important Certificate Concepts
+        - CA (Certificate Authority)
+            Signs certificates.
+        - CN (Common Name)
+            Identity of component/user.
+        - Examples:
+            system:node:worker-1
+            kubernetes-admin
+        - SAN (Subject Alternative Name)
+            - Extra valid DNS/IP names.
+            - Critical for API server.
+            - Example:
+                Kubernetes service IP
+                master node IP
+                load balancer DNS
+    - Authentication in Kubernetes
+        - Certificates are used for:
+            User authentication
+            Component authentication
+            Node authentication
+        - Example: kubelet authenticates to API server using client cert.

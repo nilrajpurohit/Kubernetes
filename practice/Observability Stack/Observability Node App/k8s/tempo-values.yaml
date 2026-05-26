@@ -1,0 +1,25 @@
+tempo:
+  retention: 24h
+
+service:
+  type: ClusterIP
+
+persistence:
+  enabled: true
+  size: 5Gi
+
+tempoQuery:
+  enabled: true
+
+serviceMonitor:
+  enabled: true
+
+ingress:
+  enabled: true
+  ingressClassName: nginx
+
+  hosts:
+    - host: tempo.local
+      paths:
+        - path: /
+          pathType: Prefix

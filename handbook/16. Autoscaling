@@ -1,0 +1,255 @@
+1. Kubernetes Autoscaling Overview
+    - Kubernetes autoscaling helps applications and infrastructure automatically adjust capacity based on load, traffic, or resource usage.
+    - There are four major autoscaling mechanisms commonly used together:
+    Autoscaler	        Scales What?	Based On	                Typical Use
+    HPA	                Pods	        CPU, memory, custom metrics	Web/API traffic spikes
+    VPA	                Pod resources	Historical usage	        Optimize CPU/RAM requests
+    Cluster Autoscaler	Nodes	        Pending pods	            Add/remove worker nodes
+    KEDA	            Pods	        External event sources	    Queue/event-driven workloads
+
+2. HPA — Horizontal Pod Autoscaler
+    - What it does
+        HPA increases or decreases the number of pod replicas.
+        - Example:
+            Low traffic → 2 pods
+            High traffic → 10 pods
+        - It scales horizontally.
+    - How HPA Works
+        HPA continuously monitors metrics like:
+            - CPU utilization
+            - Memory utilization
+            - Custom metrics
+            - Prometheus metrics
+        If utilization exceeds the threshold, Kubernetes creates more pods.
+        - Example logic:
+            Current CPU = 85%
+            Target CPU = 50%
+    - HPA increases replicas
+    - Architecture
+        Users → Service → Deployment → Pods
+                                ↑
+                                HPA
+    - HPA talks to:
+        - Metrics Server
+        - Prometheus Adapter
+        - Custom Metrics API
+    - Example HPA Configuration
+        apiVersion: autoscaling/v2
+        kind: HorizontalPodAutoscaler
+        metadata:
+            name: api-hpa
+        spec:
+            scaleTargetRef:
+                apiVersion: apps/v1
+                kind: Deployment
+                name: api-deployment
+        minReplicas: 2
+        maxReplicas: 10
+        metrics:
+        - type: Resource
+            resource:
+                name: cpu
+                target:
+                    type: Utilization
+                    averageUtilization: 50
+    - Visualization
+        - CPU utilization target:
+        Desired Replicas=⌈Current Replicas × Desired Metric Value/Current Metric Value⌉
+    - Best Use Cases
+        APIs
+        Web applications
+        Microservices
+        Stateless applications
+    - Pros
+        Fast scaling
+        Easy setup
+        Native Kubernetes feature
+    - Cons
+        Requires good metrics
+        Cold starts possible
+        Not ideal for event-driven systems
+
+3. VPA — Vertical Pod Autoscaler
+    - What it does
+        VPA changes the CPU and memory allocation of pods instead of changing pod count.
+        It scales vertically.
+    - Example:
+        - Before:
+        CPU: 200m
+        Memory: 256Mi
+        - After:
+        CPU: 1000m
+        Memory: 1Gi
+        How VPA Works
+    - VPA monitors historical resource usage and recommends or applies better values.
+    - It can:
+        Recommend resources
+        Automatically update pod specs
+        Restart pods with new resources
+    - Architecture
+        Pods → Usage Metrics → VPA Recommender
+                                ↓
+                        Update Resources
+    - Example VPA Configuration
+        apiVersion: autoscaling.k8s.io/v1
+        kind: VerticalPodAutoscaler
+        metadata:
+            name: api-vpa
+        spec:
+            targetRef:
+                apiVersion: apps/v1
+                kind: Deployment
+                name: api-deployment
+            updatePolicy:
+                updateMode: Auto
+    - Modes
+        Mode	    Behavior
+        Off	        Only recommendations
+        Initial	    Set resources at pod creation
+        Auto	    Automatically update resources
+    - Best Use Cases
+        Stateful apps
+        Databases
+        JVM applications
+        Memory-heavy workloads
+    - Pros
+        Better resource efficiency
+        Reduces overprovisioning
+        Good for unpredictable workloads
+    - Cons
+        Pod restarts required
+        Can conflict with HPA
+        Not ideal for latency-sensitive systems
+
+4. Cluster Autoscaler
+    - What it does
+    Cluster Autoscaler adds or removes Kubernetes worker nodes.
+    It scales the infrastructure layer.
+    - Why it's needed
+    Suppose HPA creates more pods:
+        10 new pods created
+        BUT
+        No node has enough CPU/RAM
+    Pods become:
+        Pending
+    Cluster Autoscaler detects this and creates new nodes.
+    Architecture
+        HPA → More Pods
+                ↓
+        Pending Pods
+                ↓
+        Cluster Autoscaler
+                ↓
+        Cloud Provider Creates Nodes
+    - How It Works
+    - Scale Up
+        - When pods cannot be scheduled:
+            Pending Pods → Add Nodes
+    - Scale Down
+        - When nodes stay underutilized:
+            Unused Nodes → Remove Nodes
+    - Supported Cloud Providers
+        Amazon Web Services (EKS)
+        Google Cloud (GKE)
+        Microsoft (AKS)
+    - Example Scenario
+        Node Capacity = 4 CPUs
+        Pods need 10 CPUs total
+        → Autoscaler adds more nodes
+    - Best Use Cases
+        Dynamic workloads
+        Cost optimization
+        Cloud-native systems
+    - Pros
+        Reduces cloud costs
+        Automatic infrastructure scaling
+        Works with HPA
+    - Cons
+        Node startup delay
+        Cloud-provider dependent
+        Complex tuning sometimes
+
+5. KEDA — Kubernetes Event-Driven Autoscaling
+    - What it does
+        KEDA scales workloads based on external events instead of CPU/memory.
+    - Examples:
+        Kafka queue length
+        RabbitMQ messages
+        Redis streams
+        Azure Service Bus
+        AWS SQS
+        Prometheus metrics
+    - Why KEDA Exists
+        HPA mainly works on:
+            CPU
+            Memory
+        But event-driven systems need scaling based on:
+            Queue size
+            Event count
+            Lag
+            Message throughput
+        KEDA solves this.
+    - Architecture
+        Kafka/RabbitMQ/SQS
+                ↓
+            KEDA
+                ↓
+            HPA
+                ↓
+            Pods
+        - KEDA actually creates and manages HPA internally.
+    - Example
+        Suppose: RabbitMQ Queue = 10,000 messages
+        KEDA scales consumers: 2 pods → 50 pods
+    
+    - Example KEDA Configuration
+        apiVersion: keda.sh/v1alpha1
+        kind: ScaledObject
+        metadata:
+            name: worker-scaledobject
+        spec:
+            scaleTargetRef:
+                name: worker-deployment
+            minReplicaCount: 0
+            maxReplicaCount: 50
+        triggers:
+        - type: rabbitmq
+            metadata:
+                queueName: orders
+                host: RabbitMQConnection
+                queueLength: "100"
+    - Special Feature: Scale to Zero
+        KEDA can scale workloads to: 0 pods
+        This saves cost for idle workloads.
+    - Best Use Cases
+        Background workers
+        Event-driven systems
+        Queue consumers
+        Streaming systems
+    - Pros
+        Event-based scaling
+        Scale-to-zero
+        Large trigger ecosystem
+    - Cons
+        Additional component to manage
+        More operational complexity
+
+6. How They Work Together
+    In real production systems:
+        KEDA/HPA scales Pods
+                ↓
+        Pods exceed node capacity
+                ↓
+        Cluster Autoscaler adds Nodes
+                ↓
+        VPA optimizes resource allocation
+    
+7. Comparison Summary
+    Feature	                HPA	        VPA	            Cluster Autoscaler	KEDA
+    Scales Pods Count	    Yes	        No	            No	                Yes
+    Scales CPU/RAM per Pod	No	        Yes	            No	                No
+    Scales Nodes	        No	        No	            Yes	                No
+    Uses CPU/Memory Metrics	Yes	        Yes	            Indirectly	        Optional
+    Uses External Events	Limited	    No	            No	                Yes
+    Scale to Zero	        No	        No	            No	                Yes
+    Best For	            APIs	    Stateful apps	Infrastructure	    Event-driven apps
