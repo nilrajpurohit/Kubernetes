@@ -1,0 +1,123 @@
+1. Service Mesh:
+    - A Service Mesh in Kubernetes is an infrastructure layer that manages service-to-service communication inside a microservices cluster. It handles networking concerns like:
+        Traffic routing
+        Load balancing
+        Service discovery
+        Mutual TLS (mTLS)
+        Observability
+        Retries & circuit breaking
+        Security policies
+    - The two most popular Kubernetes service meshes are:
+        Istio
+        Linkerd
+
+    - How a Service Mesh Works
+        A service mesh usually injects a sidecar proxy beside each application pod.
+    - Example:
+        [App Container] <-> [Proxy Sidecar]
+    All traffic goes through the proxy, allowing centralized control.
+    Common proxy:
+        Envoy (used by Istio)
+        Linkerd2-proxy (used by Linkerd)
+
+2. Istio:
+    - Key Features
+        Advanced traffic management
+        Canary deployments
+        A/B testing
+        Fault injection
+        mTLS encryption
+        Rich observability
+        Policy enforcement
+        Multi-cluster support
+
+    - Architecture
+    Main components:
+        Envoy sidecars
+        Istiod (control plane)
+        Ingress/Egress gateways
+    - Example Use Cases
+        Blue/Green deployments
+        API security
+        Complex routing rules
+        Enterprise microservices platforms
+    - Pros
+        Extremely powerful
+        Feature rich
+        Enterprise-grade
+        Large ecosystem
+    - Cons
+        More complex
+        Higher resource usage
+        Steeper learning curve
+
+3. Linkerd:
+    - Key Features
+        Lightweight
+        Simple installation
+        Automatic mTLS
+        Fast performance
+        Kubernetes-native
+        Easy observability
+    - Architecture
+    Components:
+        Linkerd control plane
+        Rust-based lightweight proxy
+        CLI + dashboard
+    - Example Use Cases
+        Small to medium clusters
+        Simpler microservice environments
+        Teams wanting easy adoption
+    - Pros
+        Easier to operate
+        Lower latency
+        Lower memory footprint
+        Beginner friendly
+    - Cons
+        Fewer advanced traffic features
+        Less flexible than Istio
+
+4. Istio vs Linkerd
+    Feature	            Istio	                    Linkerd
+    Complexity	        High	                    Low
+    Resource Usage	    Higher	                    Lower
+    Performance	        Good	                    Excellent
+    Traffic Control	    Advanced	                Basic-Moderate
+    Learning Curve	    Steep	                    Easy
+    Best For	        Large enterprise setups	    Simpler Kubernetes apps
+    Proxy	            Envoy	                    linkerd2-proxy
+    mTLS	            Yes	                        Yes
+
+5. Example Installation
+    Install Istio
+        curl -L https://istio.io/downloadIstio | sh -
+        istioctl install --set profile=demo -y
+        kubectl label namespace default istio-injection=enabled
+    Install Linkerd
+        curl -sL https://run.linkerd.io/install | sh
+        linkerd install | kubectl apply -f -
+        linkerd check
+
+6. When to Choose Which?
+    Choose Istio if:
+        You need advanced traffic management
+        You run large enterprise clusters
+        You need fine-grained policies
+        You want extensive telemetry
+    Choose Linkerd if:
+        You want simplicity
+        You need lightweight infrastructure
+        You are starting with service meshes
+        You prioritize performance and low overhead
+
+7. Simple Analogy
+    Without service mesh:
+        Service A ---> Service B
+    With service mesh:
+        Service A -> Proxy -> Proxy -> Service B
+    The proxies manage:
+        encryption
+        retries
+        metrics
+        routing
+        authentication
