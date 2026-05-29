@@ -1,0 +1,110 @@
+1. Security Hardening
+    - Security hardening in Kubernetes focuses on reducing the attack surface, enforcing least privilege, and protecting workloads, images, and the software supply chain.
+
+2. Pod Security Standards (PSS)
+    - Pod Security Standards define security levels for Pods and replace the older PodSecurityPolicy mechanism.
+    - Levels
+    1. Privileged
+        Unrestricted policy
+        Allows privileged containers and host access
+        Suitable only for trusted system workloads
+    2. Baseline
+        Prevents known privilege escalations
+        Disallows dangerous capabilities
+        Suitable for most applications
+    3. Restricted
+        Enforces strict security controls
+        Requires non-root execution
+        Limits Linux capabilities
+        Recommended for production workloads
+    - Example Namespace Labels
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+            name: production
+            labels:
+                pod-security.kubernetes.io/enforce: restricted
+                pod-security.kubernetes.io/audit: restricted
+                pod-security.kubernetes.io/warn: restricted
+
+3. Security Contexts
+    - Security contexts define privilege and access control settings for Pods or Containers.
+    - Common Security Settings
+        Run containers as non-root
+        Drop unnecessary Linux capabilities
+        Use read-only root filesystem
+        Prevent privilege escalation
+    - Example
+        apiVersion: v1
+        kind: Pod
+        metadata:
+            name: secure-pod
+        spec:
+            securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+        containers:
+            - name: app
+                image: nginx
+                securityContext:
+                    allowPrivilegeEscalation: false
+                    readOnlyRootFilesystem: true
+                    capabilities:
+                    drop:
+                        - ALL
+    - Important Fields
+        Field	                    Purpose
+        runAsNonRoot	            Prevents root execution
+        runAsUser	                Specifies container UID
+        readOnlyRootFilesystem	    Prevents filesystem modification
+        allowPrivilegeEscalation	Blocks privilege escalation
+        capabilities.drop	        Removes Linux capabilities
+
+4. Image Security
+    - Container images must be secured to reduce vulnerabilities.
+    - Best Practices
+        Use minimal base images
+            Alpine
+            Distroless
+        Avoid running as root
+        Pin image versions
+        Regularly scan images for vulnerabilities
+        Remove unused packages and tools
+        Sign and verify images
+    - Example
+        FROM node:22-alpine
+        WORKDIR /app
+        COPY package*.json ./
+        RUN npm ci --only=production
+        COPY . .
+        USER node
+        CMD ["node", "server.js"]
+    - Image Scanning Tools
+        Trivy
+        Clair
+        Grype
+        Docker Scout
+
+5. Supply Chain Security
+    - Supply chain security protects the integrity of software artifacts throughout the build and deployment lifecycle.
+    - Key Areas
+    1. Artifact Signing
+        Verify image authenticity
+        Prevent tampered images
+    2. SBOM (Software Bill of Materials)
+        Track dependencies
+        Improve vulnerability management
+    3. CI/CD Security
+        Protect secrets
+        Use least-privileged runners
+        Verify dependencies
+    4. Admission Control
+        Block untrusted images
+        Enforce policies before deployment
+    - Common Tools
+        Cosign — image signing and verification
+        Syft — generates SBOMs
+        OPA Gatekeeper — policy enforcement
+        Kyverno — Kubernetes-native policies
+    - Example Cosign Verification
+        cosign verify nginx:latest

@@ -1,0 +1,163 @@
+1. Custom Resources & Operators
+    - Kubernetes is extensible through Custom Resource Definitions (CRDs) and Operators, allowing you to manage complex applications using Kubernetes-native APIs.
+
+2. Custom Resources (CRDs)
+    - A Custom Resource Definition (CRD) lets you create your own Kubernetes object types.
+    - Kubernetes already includes built-in resources such as:
+        Pods
+        Deployments
+        Services
+    - CRDs allow you to define resources like:
+        Database
+        Backup
+        CacheCluster
+        MessageQueue
+3. Why Use CRDs?
+    - CRDs are useful when:
+        Managing complex applications
+        Automating operational tasks
+        Extending Kubernetes APIs
+        Creating platform-specific abstractions
+    - Example:
+    Instead of manually configuring a database:
+        apiVersion: databases.example.com/v1
+        kind: Database
+        metadata:
+            name: production-db
+        spec:
+            engine: postgres
+            version: "16"
+            storage: 100Gi
+    - A controller/operator can automatically:
+        Create StatefulSets
+        Configure backups
+        Handle failover
+        Manage upgrades
+    - CRD Architecture
+    Components
+        1. Custom Resource Definition
+            Defines schema and API structure
+        2. Custom Resource (CR)
+            Instance of the custom object
+        3. Controller / Operator
+            Watches resources and reconciles desired state
+
+4. Creating a CRD
+    - Example CRD
+        apiVersion: apiextensions.k8s.io/v1
+        kind: CustomResourceDefinition
+        metadata:
+            name: databases.example.com
+        spec:
+            group: example.com
+        names:
+            plural: databases
+            singular: database
+            kind: Database
+            shortNames:
+                - db
+        scope: Namespaced
+        versions:
+            - name: v1
+            served: true
+            storage: true
+            schema:
+                openAPIV3Schema:
+                    type: object
+                    properties:
+                        spec:
+                            type: object
+                            properties:
+                                engine:
+                                    type: string
+                                version:
+                                    type: string
+                                storage:
+                                    type: string
+
+5. Creating a Custom Resource
+    apiVersion: example.com/v1
+    kind: Database
+    metadata:
+        name: app-db
+    spec:
+        engine: postgres
+        version: "16"
+        storage: 50Gi
+
+6. Operators
+    - An Operator is a Kubernetes controller that automates application management using CRDs.
+    - Operators follow the control loop pattern:
+        1. Watch resources
+        2. Compare desired vs actual state
+        3. Reconcile differences automatically
+
+7. What Operators Can Do
+    - Operators automate:
+        Deployment
+        Scaling
+        Failover
+        Backups
+        Recovery
+        Upgrades
+        Certificate rotation
+    - Examples:
+        Database clustering
+        Kafka management
+        Monitoring stacks
+
+8. Operator Workflow
+    Custom Resource
+        ↓
+    Operator watches events
+        ↓
+    Controller reconciliation loop
+        ↓
+    Creates/updates Kubernetes resources
+        ↓
+    Desired state maintained
+
+9. Popular Operators
+    - Databases
+        Postgres Operator
+        Percona Operator
+        MongoDB Community Operator
+    - Messaging & Streaming
+        Strimzi
+    - Monitoring
+        Prometheus Operator
+    - GitOps
+        Flux
+        Argo CD
+
+9. Building Operators
+    Common Frameworks
+    Framework	    Language
+    Kubebuilder	    Go
+    Operator SDK	Go / Ansible / Helm
+    Kopf	        Python
+
+10. Example Reconciliation Logic
+    - Pseudo workflow:
+        Watch Database CR
+            ↓
+        If database missing:
+            Create StatefulSet
+            Create Service
+            Create PVC
+            Configure backup job
+            Update CR status
+
+11. Benefits of Operators
+    Benefit	            Description
+    Automation	        Reduces manual operations
+    Self-healing	    Automatically recovers failures
+    Consistency	        Standardized deployments
+    Scalability	        Manages large environments
+    Kubernetes-native	Uses Kubernetes APIs
+
+12. CRDs vs Built-in Resources
+    Built-in Resource	    Custom Resource
+    Provided by Kubernetes	User-defined
+    Fixed schemas	        Extendable schemas
+    Core functionality	    Domain-specific logic
