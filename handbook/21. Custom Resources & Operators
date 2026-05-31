@@ -12,6 +12,7 @@
         Backup
         CacheCluster
         MessageQueue
+
 3. Why Use CRDs?
     - CRDs are useful when:
         Managing complex applications

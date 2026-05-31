@@ -1,0 +1,200 @@
+1. Multi-Tenancy Patterns
+  - Kubernetes multi-tenancy is the practice of sharing a Kubernetes cluster among multiple tenants while maintaining isolation, security, and resource fairness. A tenant could be a team, department, customer, application, or environment.
+  - Common Multi-Tenancy Models
+  1. Namespace-Based Multi-Tenancy (Soft Multi-Tenancy)
+    The most common approach.
+      Cluster
+      ├── namespace: team-a
+      ├── namespace: team-b
+      └── namespace: team-c
+    Each tenant gets its own namespace.
+    Isolation mechanisms:
+      Namespaces
+      RBAC
+      Network Policies
+      Resource Quotas
+      Limit Ranges
+    Example:
+      apiVersion: v1
+      kind: ResourceQuota
+      metadata:
+        name: team-a-quota
+        namespace: team-a
+      spec:
+        hard:
+          requests.cpu: "10"
+          requests.memory: 20Gi
+    Pros
+      Low cost
+      Easy management
+      Efficient resource utilization
+    Cons
+      Shared control plane
+      Weaker isolation
+      Cluster-wide misconfigurations can affect all tenants
+    Best for
+      Internal engineering teams
+      Development environments
+      Small to medium organizations
+  
+  2. Cluster-Based Multi-Tenancy (Hard Multi-Tenancy)
+    Each tenant gets a dedicated Kubernetes cluster.
+      Tenant A → Cluster A
+      Tenant B → Cluster B
+      Tenant C → Cluster C
+    Pros
+      Strong isolation
+      Independent upgrades
+      Separate security boundaries
+    Cons
+      Higher operational cost
+      More infrastructure overhead
+      Cluster sprawl
+    Best for
+      SaaS platforms with strict customer isolation
+      Regulated industries
+      Enterprise customers
+  
+  3. Virtual Cluster Pattern
+    - A virtual cluster runs inside a namespace of a host cluster while exposing a separate Kubernetes API server to tenants.
+      Host Cluster
+      ├── vCluster A
+      ├── vCluster B
+      └── vCluster C
+    - Popular solutions:
+      vCluster
+      Loft Labs
+    - How it works
+      Tenant sees their own cluster.
+      Workloads run in namespaces on the host cluster.
+      Separate API server and control plane.
+    - Pros
+      Better isolation than namespaces
+      Lower cost than dedicated clusters
+      Self-service environments
+    - Cons
+      Additional operational complexity
+      Some Kubernetes features require special handling
+    - Best for
+      Platform engineering teams
+      CI/CD preview environments
+      Internal developer platforms
+  
+  4. Hierarchical Namespace Pattern
+    - Useful for large organizations.
+      company
+      ├── platform
+      │   ├── backend
+      │   └── frontend
+      └── data
+          ├── analytics
+          └── ml
+    - Implemented using:
+      Hierarchical Namespace Controller (HNC)
+    - Benefits
+      Delegated administration
+      Policy inheritance
+      Better organizational structure
+
+2. Isolation Layers in Multi-Tenant Clusters
+  - Identity Isolation
+  Use RBAC to restrict access.
+    Tenant → Role → RoleBinding → Namespace
+  - Example:
+    kind: RoleBinding
+    apiVersion: rbac.authorization.k8s.io/v1
+    metadata:
+      namespace: team-a
+      name: team-a-admin
+    subjects:
+    - kind: User
+      name: alice
+    roleRef:
+      kind: Role
+      name: admin
+      apiGroup: rbac.authorization.k8s.io
+
+  - Network Isolation
+  Use Network Policies.
+    team-a pods
+        ↓
+    only communicate
+        ↓
+    team-a services
+  - Example:
+    apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      namespace: team-a
+      name: deny-cross-namespace
+    spec:
+      podSelector: {}
+      policyTypes:
+      - Ingress
+  - Popular implementations:
+    Cilium
+    Calico
+  
+  - Resource Isolation
+  Prevent "noisy neighbor" issues.
+  Tools:
+    ResourceQuota
+    LimitRange
+    CPU/Memory requests and limits
+      Tenant A
+        CPU: 10 cores
+
+      Tenant B
+        CPU: 10 cores
+
+      Tenant C
+        CPU: 10 cores
+  No tenant can starve others.
+  
+  - Security Isolation
+  Use:
+    Pod Security Admission
+    OPA/Gatekeeper
+    Kyverno
+  - Examples:
+    Disallow privileged containers
+    Enforce image registries
+    Require resource limits
+  - Popular projects:
+    OPA Gatekeeper
+    Kyverno
+
+3. Multi-Tenancy Patterns Used by Platform Teams
+  Pattern 1: Namespace per Team
+    platform-cluster
+    ├── team-a
+    ├── team-b
+    ├── team-c
+  Most common enterprise model.
+
+  Pattern 2: Namespace per Environment
+    team-a-dev
+    team-a-stage
+    team-a-prod
+  Simple but can create many namespaces.
+
+  Pattern 3: Cluster per Environment
+    dev-cluster
+    staging-cluster
+    prod-cluster
+  Frequently used in larger organizations.
+
+  Pattern 4: Virtual Cluster per Team
+    shared-cluster
+    ├── vcluster-team-a
+    ├── vcluster-team-b
+    └── vcluster-team-c
+  Increasingly popular for Internal Developer Platforms (IDPs).
+
+4. Recommended Pattern by Organization Size
+  Organization	                Recommended Pattern
+  Startup	                      Namespace-based
+  Growing company	              Namespace + Network Policies + Quotas
+  Large enterprise	            Virtual clusters or hierarchical namespaces
+  Multi-customer SaaS	          Dedicated clusters or virtual clusters
+  Highly regulated workloads	  Dedicated clusters
